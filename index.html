@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>試算表查詢系統</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900">
+
+    <div id="app" class="max-w-6xl mx-auto px-4 py-8">
+        <!-- 標題 -->
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">試算表資料查詢系統</h1>
+            <p class="text-slate-500">此為私密資料，請先登入具備權限的帳號</p>
+        </header>
+
+        <!-- 登入介面 -->
+        <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-slate-100 max-w-2xl mx-auto">
+            <div class="mb-8 p-4 bg-blue-50 rounded-full text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">身份驗證</h2>
+            <p class="text-slate-600 mb-8 text-center px-10">
+                您需要登入具備該試算表存取權限的 Google 帳號才能查詢資料。
+            </p>
+            <button onclick="handleAuthClick()" class="flex items-center px-8 py-4 bg-white border border-slate-300 rounded-2xl shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-300 text-slate-700 font-bold group">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-4 group-hover:scale-110 transition-transform" alt="Google">
+                使用 Google 帳號登入
+            </button>
+            <p id="auth-error" class="mt-6 text-red-500 font-medium hidden">驗證失敗，請確認該帳號具備試算表權限</p>
+        </div>
+
+        <!-- 查詢介面 -->
+        <div id="query-view" class="hidden animate-in fade-in duration-500">
+            <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 mb-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="輸入關鍵字自動過濾..." 
+                            class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700">
+                    </div>
+                    <button onclick="signOut()" class="px-6 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出 / 切換帳號</button>
+                </div>
+            </div>
+
+            <div id="loading" class="flex flex-col items-center justify-center py-20 hidden">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
+                <p class="text-slate-400 font-medium">資料讀取中...</p>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead id="tableHeader" class="bg-slate-50/50"></thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600"></tbody>
+                </table>
+            </div>
+            
+            <p id="noResults" class="text-center py-20 text-slate-400 hidden font-medium">找不到符合的資料</p>
+        </div>
+    </div>
+
+    <script>
+        /** --- 設定區 --- **/
+        // 1. 請填入您申請到的 Client ID
+        const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
+        // 2. 試算表 ID
+        const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
+        // 3. 讀取範圍 (工作表名稱!範圍)
+        const RANGE = '工作表1!A1:Z100'; 
+
+        let allData = [];
+        let tokenClient;
+        let accessToken = null;
+
+        window.onload = function() {
+            if (typeof google !== 'undefined') {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+                    callback: (response) => {
+                        if (response.error !== undefined) throw (response);
+                        accessToken = response.access_token;
+                        showQueryView();
+                        fetchSheetData();
+                    },
+                });
+            }
+        };
+
+        function handleAuthClick() {
+            tokenClient && tokenClient.requestAccessToken({prompt: 'consent'});
+        }
+
+        function signOut() {
+            if (accessToken) {
+                google.accounts.oauth2.revokeToken(accessToken);
+                accessToken = null;
+            }
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('query-view').classList.add('hidden');
+        }
+
+        function showQueryView() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('query-view').classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        async function fetchSheetData() {
+            document.getElementById('loading').classList.remove('hidden');
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
+            
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await response.json();
+                
+                if (data.values) {
+                    allData = data.values;
+                    renderTable(allData);
+                } else {
+                    throw new Error('No data');
+                }
+            } catch (err) {
+                document.getElementById('auth-error').innerText = "權限驗證失敗，請確認您的帳號具備試算表權限。";
+                document.getElementById('auth-error').classList.remove('hidden');
+                signOut();
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function renderTable(rows) {
+            const headerEl = document.getElementById('tableHeader');
+            const bodyEl = document.getElementById('tableBody');
+            headerEl.innerHTML = ''; bodyEl.innerHTML = '';
+
+            if (rows.length === 0) return;
+
+            const headers = rows[0];
+            const headerRow = document.createElement('tr');
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.className = "px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider";
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            headerEl.appendChild(headerRow);
+
+            rows.slice(1).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50/50 transition-colors";
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = "px-6 py-4 whitespace-nowrap";
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                bodyEl.appendChild(tr);
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const filtered = [allData[0], ...allData.slice(1).filter(row => 
+                row.some(cell => String(cell).toLowerCase().includes(term))
+            )];
+            renderTable(filtered);
+            document.getElementById('noResults').classList.toggle('hidden', filtered.length > 1 || term === '');
+        });
+    </script>
+</body>
+</html>

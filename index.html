@@ -17,25 +17,34 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* 針對長文本欄位的優化：允許折行並限制寬度 */
         .content-cell {
-            min-width: 200px;
-            max-width: 450px;
+            min-width: 280px;
+            max-width: 500px;
             white-space: normal !important;
             word-break: break-all;
             line-height: 1.6;
+            vertical-align: top;
         }
+        /* 固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
             top: 0;
             z-index: 10;
             background-color: #f8fafc;
             box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            white-space: nowrap;
         }
+        /* 捲軸美化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
 
-    <div id="app" class="max-w-[95%] mx-auto px-4 py-8">
+    <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <!-- 標題區 -->
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-extrabold text-slate-800 mb-2">企業客戶差旅政策查詢</h1>
@@ -88,7 +97,7 @@
             <!-- 狀態提示 -->
             <div id="loading" class="flex flex-col items-center justify-center py-20 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
-                <p id="loadingText" class="text-slate-400 font-medium text-lg">處理中...</p>
+                <p id="loadingText" class="text-slate-400 font-medium text-lg text-center">處理中...</p>
             </div>
 
             <!-- API 錯誤診斷區 -->
@@ -103,253 +112,4 @@
                 <div class="text-left bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm leading-relaxed mb-6">
                     <p class="font-bold text-slate-700 mb-2">🔍 常見原因檢查：</p>
                     <ul class="list-disc list-inside text-slate-500 space-y-1">
-                        <li>分頁名稱是否為「<span class="text-blue-600 font-bold">行政-合約管理(台北)</span>」？</li>
-                        <li>您的帳號是否有該試算表的「<span class="font-bold">檢視權限</span>」？</li>
-                    </ul>
-                </div>
-                <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新連線</button>
-            </div>
-
-            <!-- 資料表格容器 -->
-            <div id="table-container" class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
-                <table class="min-w-full divide-y divide-slate-100">
-                    <thead id="tableHeader" class="table-sticky-header"></thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
-                </table>
-            </div>
-            
-            <!-- 查無結果提示 (優化顯示邏輯) -->
-            <div id="noResults" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-200 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">找不到關鍵字所對應的資料，請換個詞試試。</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        /** --- 核心設定區 --- **/
-        const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
-        const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
-        const RANGE = '行政-合約管理(台北)!A1:Z2000'; 
-
-        let allData = [];
-        let tokenClient;
-        let accessToken = null;
-
-        window.onload = function() {
-            if (typeof google !== 'undefined') {
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
-                    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-                    callback: (response) => {
-                        if (response.error !== undefined) {
-                            showError("認證出錯，請刷新頁面再試。");
-                            return;
-                        }
-                        accessToken = response.access_token;
-                        showQueryView();
-                        fetchSheetData();
-                    },
-                });
-                document.getElementById('sub-title').innerText = "系統已就緒，請登入帳號";
-            } else {
-                showError("無法讀取 Google 服務，請確認網路環境。");
-            }
-        };
-
-        function handleAuthClick() {
-            document.getElementById('auth-error').classList.add('hidden');
-            tokenClient && tokenClient.requestAccessToken({prompt: 'consent'});
-        }
-
-        function signOut() {
-            if (accessToken) {
-                google.accounts.oauth2.revokeToken(accessToken);
-                accessToken = null;
-            }
-            location.reload();
-        }
-
-        function showQueryView() {
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('query-view').classList.remove('hidden');
-            document.getElementById('sub-title').innerText = "行政-合約管理(台北)";
-        }
-
-        function showError(msg) {
-            const errorEl = document.getElementById('auth-error');
-            errorEl.innerText = msg;
-            errorEl.classList.remove('hidden');
-        }
-
-        // 從試算表抓取原始資料
-        async function fetchSheetData() {
-            const loadingEl = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-            const errorDisplay = document.getElementById('api-error-display');
-            const tableContainer = document.getElementById('table-container');
-            
-            errorDisplay.classList.add('hidden');
-            tableContainer.classList.add('hidden');
-            loadingText.innerText = "正在同步雲端資料...";
-            loadingEl.classList.remove('hidden');
-
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
-            
-            try {
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await response.json();
-                
-                if (data.error) throw new Error(data.error.message);
-                
-                if (data.values && data.values.length > 0) {
-                    allData = data.values;
-                    // 初次進入顯示全部資料
-                    renderTable(allData);
-                } else {
-                    allData = [];
-                    showNoResultsFound("試算表內目前是空的。");
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('api-error-msg').innerText = "錯誤原因：" + err.message;
-                errorDisplay.classList.remove('hidden');
-            } finally {
-                loadingEl.classList.add('hidden');
-            }
-        }
-
-        // 將資料渲染進表格，若 rows 為空則顯示「查無結果」
-        function renderTable(rows) {
-            const headerEl = document.getElementById('tableHeader');
-            const bodyEl = document.getElementById('tableBody');
-            const tableContainer = document.getElementById('table-container');
-            const noResultsEl = document.getElementById('noResults');
-
-            headerEl.innerHTML = ''; bodyEl.innerHTML = '';
-
-            // rows.length <= 1 代表只有表頭或是完全沒資料
-            if (!rows || rows.length <= 1) {
-                tableContainer.classList.add('hidden');
-                noResultsEl.classList.remove('hidden');
-                return;
-            }
-
-            tableContainer.classList.remove('hidden');
-            noResultsEl.classList.add('hidden');
-
-            // 建立表頭
-            const headers = rows[0];
-            const headerRow = document.createElement('tr');
-            headers.forEach(text => {
-                const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left text-xs font-extrabold text-slate-600 uppercase tracking-wider border-b border-slate-200";
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            headerEl.appendChild(headerRow);
-
-            // 建立內容列
-            rows.slice(1).forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/50 transition-colors border-b border-slate-50";
-                headers.forEach((_, i) => {
-                    const td = document.createElement('td');
-                    const cellContent = row[i] || "";
-                    td.className = "px-6 py-4";
-                    if (cellContent.length > 25) {
-                        td.classList.add('content-cell');
-                    } else {
-                        td.classList.add('whitespace-nowrap');
-                    }
-                    td.textContent = cellContent;
-                    tr.appendChild(td);
-                });
-                bodyEl.appendChild(tr);
-            });
-        }
-
-        function showNoResultsFound(detailMsg) {
-            document.getElementById('table-container').classList.add('hidden');
-            const noResultsEl = document.getElementById('noResults');
-            noResultsEl.classList.remove('hidden');
-            if(detailMsg) {
-                document.getElementById('noResultsDetail').innerText = detailMsg;
-            }
-        }
-
-        // 核心搜尋功能
-        function performSearch() {
-            const inputEl = document.getElementById('searchInput');
-            const term = inputEl.value.toLowerCase().trim();
-            const noResultsEl = document.getElementById('noResults');
-            const tableContainer = document.getElementById('table-container');
-            const loadingEl = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-
-            // 防呆：如果資料庫完全沒抓到，嘗試重連
-            if (allData.length === 0) {
-                fetchSheetData();
-                return;
-            }
-
-            // 顯示搜尋中動畫
-            tableContainer.classList.add('hidden');
-            noResultsEl.classList.add('hidden');
-            loadingText.innerText = "搜尋比對中...";
-            loadingEl.classList.remove('hidden');
-
-            setTimeout(() => {
-                const headers = allData[0];
-                const content = allData.slice(1);
-
-                // 如果搜尋框是空的，恢復顯示全部
-                if (term === "") {
-                    renderTable(allData);
-                    loadingEl.classList.add('hidden');
-                    return;
-                }
-
-                // 執行篩選
-                const filtered = content.filter(row => {
-                    return row.some(cell => {
-                        const cellStr = String(cell).toLowerCase();
-                        if (cellStr.includes(term)) return true;
-                        
-                        // 支援日期格式模糊比對 (2/12 匹配 2026/02/12)
-                        if (term.includes('/') && term.length >= 3) {
-                            const parts = term.split('/');
-                            const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
-                            if (regex.test(cellStr)) return true;
-                        }
-                        return false;
-                    });
-                });
-                
-                loadingEl.classList.add('hidden');
-
-                if (filtered.length === 0) {
-                    showNoResultsFound(`找不到包含「${term}」的相關合約或政策資料。`);
-                } else {
-                    renderTable([headers, ...filtered]);
-                }
-            }, 300); 
-        }
-
-        // 當使用者刪除搜尋字串時，自動恢復完整列表
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            if (e.target.value.trim() === "") {
-                renderTable(allData);
-                document.getElementById('noResults').classList.add('hidden');
-            }
-        });
-    </script>
-</body>
-</html>
+                        <li>分頁名稱是否為「<span class="text-blue-600 font-bold">行政-

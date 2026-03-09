@@ -17,7 +17,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* 針對長文本欄位的優化：允許折行並限制寬度 */
         .content-cell {
             min-width: 200px;
             max-width: 450px;
@@ -25,7 +24,6 @@
             word-break: break-all;
             line-height: 1.6;
         }
-        /* 固定表頭 */
         .table-sticky-header th {
             position: sticky;
             top: 0;
@@ -41,7 +39,7 @@
         <!-- 標題區 -->
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-extrabold text-slate-800 mb-2">企業客戶差旅政策查詢</h1>
-            <p class="text-slate-500 font-medium">分頁：行政-合約管理(台北)</p>
+            <p id="sub-title" class="text-slate-500 font-medium italic">系統初始化中...</p>
         </header>
 
         <!-- 登入介面 (未驗證時顯示) -->
@@ -53,11 +51,11 @@
             </div>
             <h2 class="text-2xl font-bold text-slate-800 mb-4">身份驗證</h2>
             <p class="text-slate-600 mb-8 text-center px-6">
-                本系統包含敏感報價資訊，請使用具備權限的 Google 帳號登入。
+                本系統包含內部報價資訊，請使用具備「試算表權限」的 Google 帳號登入。
             </p>
             <button onclick="handleAuthClick()" class="flex items-center px-8 py-4 bg-white border border-slate-300 rounded-2xl shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-300 text-slate-700 font-bold group">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-4 group-hover:scale-110 transition-transform" alt="Google">
-                驗證帳號權限
+                使用 Google 帳號登入
             </button>
             <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100"></div>
         </div>
@@ -66,7 +64,6 @@
         <div id="query-view" class="hidden">
             <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 mb-8">
                 <div class="flex flex-col md:flex-row md:items-center gap-4">
-                    <!-- 搜尋欄位與按鈕組合 -->
                     <div class="flex flex-1 relative group shadow-sm rounded-2xl overflow-hidden border border-slate-200">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,7 +71,7 @@
                             </svg>
                         </span>
                         <input type="text" id="searchInput" 
-                            placeholder="搜尋法人代碼、企業名稱、日期 (如 2/12) 或 政策關鍵字..." 
+                            placeholder="輸入關鍵字 (如：法人代碼、企業名稱、日期 2/12)..." 
                             class="block w-full pl-12 pr-4 py-4 bg-slate-50 focus:bg-white outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold"
                             onkeypress="if(event.keyCode==13) performSearch()">
                         
@@ -84,35 +81,36 @@
                         </button>
                     </div>
                     
-                    <button onclick="signOut()" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出系統</button>
+                    <button onclick="signOut()" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出</button>
                 </div>
             </div>
 
-            <!-- 載入中動畫 -->
+            <!-- 狀態提示 -->
             <div id="loading" class="flex flex-col items-center justify-center py-20 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
-                <p id="loadingText" class="text-slate-400 font-medium text-lg">正在處理中...</p>
+                <p id="loadingText" class="text-slate-400 font-medium text-lg">處理中...</p>
             </div>
 
-            <!-- 錯誤提示區 (針對資料抓取失敗) -->
-            <div id="api-error-display" class="hidden max-w-2xl mx-auto p-6 bg-red-50 border border-red-100 rounded-3xl text-center mb-10">
-                <div class="text-red-500 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- API 錯誤診斷區 -->
+            <div id="api-error-display" class="hidden max-w-2xl mx-auto p-8 bg-white border-2 border-red-200 rounded-3xl shadow-xl text-center mb-10">
+                <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
-                <h3 class="text-lg font-bold text-red-800">資料讀取失敗</h3>
-                <p id="api-error-msg" class="text-red-600 mt-2">未知錯誤</p>
-                <div class="mt-4 text-xs text-red-400 bg-white p-3 rounded-xl text-left font-mono overflow-auto leading-relaxed">
-                    檢查清單：<br>
-                    1. 試算表的分頁名稱必須精確等於「行政-合約管理(台北)」<br>
-                    2. 您的 Email 必須在該試算表的「共用」名單中<br>
-                    3. 若剛剛才設定好 Client ID，請稍等 5 分鐘後再試
+                <h3 class="text-xl font-extrabold text-slate-800 mb-2">資料載入失敗</h3>
+                <p id="api-error-msg" class="text-red-600 font-medium mb-6">錯誤詳情：讀取失敗</p>
+                <div class="text-left bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm leading-relaxed mb-6">
+                    <p class="font-bold text-slate-700 mb-2">🔍 常見原因檢查：</p>
+                    <ul class="list-disc list-inside text-slate-500 space-y-1">
+                        <li>分頁名稱是否為「<span class="text-blue-600 font-bold">行政-合約管理(台北)</span>」？</li>
+                        <li>您的帳號是否有該試算表的「<span class="font-bold">檢視權限</span>」？</li>
+                    </ul>
                 </div>
-                <button onclick="fetchSheetData()" class="mt-4 px-6 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">重新連線</button>
+                <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新連線</button>
             </div>
 
-            <!-- 表格顯示區 -->
+            <!-- 資料表格容器 -->
             <div id="table-container" class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead id="tableHeader" class="table-sticky-header"></thead>
@@ -120,15 +118,15 @@
                 </table>
             </div>
             
-            <!-- 查無資料提示 -->
+            <!-- 查無結果提示 (優化顯示邏輯) -->
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
                 <div class="text-slate-200 mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h3 id="noResultsTitle" class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
-                <p id="noResultsDesc" class="text-slate-300 mt-2">請更換搜尋詞後再試一次</p>
+                <h3 class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
+                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">找不到關鍵字所對應的資料，請換個詞試試。</p>
             </div>
         </div>
     </div>
@@ -137,8 +135,6 @@
         /** --- 核心設定區 --- **/
         const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
-        
-        // 已為您更新為正確的分頁名稱
         const RANGE = '行政-合約管理(台北)!A1:Z2000'; 
 
         let allData = [];
@@ -152,7 +148,7 @@
                     scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
                     callback: (response) => {
                         if (response.error !== undefined) {
-                            showError("Google 認證失敗，請重新整理頁面。");
+                            showError("認證出錯，請刷新頁面再試。");
                             return;
                         }
                         accessToken = response.access_token;
@@ -160,8 +156,9 @@
                         fetchSheetData();
                     },
                 });
+                document.getElementById('sub-title').innerText = "系統已就緒，請登入帳號";
             } else {
-                showError("Google SDK 載入異常，請檢查網路環境或廣告攔截程式。");
+                showError("無法讀取 Google 服務，請確認網路環境。");
             }
         };
 
@@ -181,6 +178,7 @@
         function showQueryView() {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('query-view').classList.remove('hidden');
+            document.getElementById('sub-title').innerText = "行政-合約管理(台北)";
         }
 
         function showError(msg) {
@@ -189,14 +187,16 @@
             errorEl.classList.remove('hidden');
         }
 
-        // 讀取資料邏輯
+        // 從試算表抓取原始資料
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             const loadingText = document.getElementById('loadingText');
             const errorDisplay = document.getElementById('api-error-display');
+            const tableContainer = document.getElementById('table-container');
             
             errorDisplay.classList.add('hidden');
-            loadingText.innerText = "正在連線 Google 雲端讀取「台北合約管理」資料...";
+            tableContainer.classList.add('hidden');
+            loadingText.innerText = "正在同步雲端資料...";
             loadingEl.classList.remove('hidden');
 
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
@@ -207,28 +207,26 @@
                 });
                 const data = await response.json();
                 
-                if (data.error) {
-                    throw new Error(data.error.message || "讀取失敗，請檢查分頁名稱與權限。");
-                }
+                if (data.error) throw new Error(data.error.message);
                 
                 if (data.values && data.values.length > 0) {
                     allData = data.values;
+                    // 初次進入顯示全部資料
                     renderTable(allData);
-                    document.getElementById('table-container').classList.remove('hidden');
                 } else {
                     allData = [];
-                    showNoResults("分頁內無資料", "目前「行政-合約管理(台北)」分頁中似乎沒有任何內容。");
+                    showNoResultsFound("試算表內目前是空的。");
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('api-error-msg').innerText = err.message;
+                document.getElementById('api-error-msg').innerText = "錯誤原因：" + err.message;
                 errorDisplay.classList.remove('hidden');
-                document.getElementById('table-container').classList.add('hidden');
             } finally {
                 loadingEl.classList.add('hidden');
             }
         }
 
+        // 將資料渲染進表格，若 rows 為空則顯示「查無結果」
         function renderTable(rows) {
             const headerEl = document.getElementById('tableHeader');
             const bodyEl = document.getElementById('tableBody');
@@ -237,14 +235,17 @@
 
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
 
-            if (rows.length === 0) {
+            // rows.length <= 1 代表只有表頭或是完全沒資料
+            if (!rows || rows.length <= 1) {
                 tableContainer.classList.add('hidden');
+                noResultsEl.classList.remove('hidden');
                 return;
             }
 
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
 
+            // 建立表頭
             const headers = rows[0];
             const headerRow = document.createElement('tr');
             headers.forEach(text => {
@@ -255,15 +256,15 @@
             });
             headerEl.appendChild(headerRow);
 
+            // 建立內容列
             rows.slice(1).forEach(row => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/50 transition-colors";
+                tr.className = "hover:bg-blue-50/50 transition-colors border-b border-slate-50";
                 headers.forEach((_, i) => {
                     const td = document.createElement('td');
                     const cellContent = row[i] || "";
-                    td.className = "px-6 py-4 border-b border-slate-50";
-                    // 若內容過長（如備註、規範說明），應用寬度限制與折行
-                    if (cellContent.length > 20) {
+                    td.className = "px-6 py-4";
+                    if (cellContent.length > 25) {
                         td.classList.add('content-cell');
                     } else {
                         td.classList.add('whitespace-nowrap');
@@ -275,53 +276,54 @@
             });
         }
 
-        function showNoResults(title, desc) {
-            const noResultsEl = document.getElementById('noResults');
-            const titleEl = document.getElementById('noResultsTitle');
-            const descEl = document.getElementById('noResultsDesc');
-            
-            titleEl.innerText = title;
-            descEl.innerText = desc;
-            
-            noResultsEl.classList.remove('hidden');
+        function showNoResultsFound(detailMsg) {
             document.getElementById('table-container').classList.add('hidden');
+            const noResultsEl = document.getElementById('noResults');
+            noResultsEl.classList.remove('hidden');
+            if(detailMsg) {
+                document.getElementById('noResultsDetail').innerText = detailMsg;
+            }
         }
 
-        // 搜尋處理邏輯
+        // 核心搜尋功能
         function performSearch() {
-            const term = document.getElementById('searchInput').value.toLowerCase().trim();
+            const inputEl = document.getElementById('searchInput');
+            const term = inputEl.value.toLowerCase().trim();
             const noResultsEl = document.getElementById('noResults');
             const tableContainer = document.getElementById('table-container');
             const loadingEl = document.getElementById('loading');
             const loadingText = document.getElementById('loadingText');
 
+            // 防呆：如果資料庫完全沒抓到，嘗試重連
             if (allData.length === 0) {
                 fetchSheetData();
                 return;
             }
 
+            // 顯示搜尋中動畫
             tableContainer.classList.add('hidden');
             noResultsEl.classList.add('hidden');
-            loadingText.innerText = "正在比對搜尋結果...";
+            loadingText.innerText = "搜尋比對中...";
             loadingEl.classList.remove('hidden');
 
-            // 稍微延遲以顯示動畫，讓操作更有感
             setTimeout(() => {
                 const headers = allData[0];
                 const content = allData.slice(1);
 
+                // 如果搜尋框是空的，恢復顯示全部
                 if (term === "") {
                     renderTable(allData);
                     loadingEl.classList.add('hidden');
                     return;
                 }
 
+                // 執行篩選
                 const filtered = content.filter(row => {
                     return row.some(cell => {
                         const cellStr = String(cell).toLowerCase();
                         if (cellStr.includes(term)) return true;
                         
-                        // 強化日期搜尋 (如輸入 2/12 匹配 2026/02/12)
+                        // 支援日期格式模糊比對 (2/12 匹配 2026/02/12)
                         if (term.includes('/') && term.length >= 3) {
                             const parts = term.split('/');
                             const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
@@ -334,14 +336,14 @@
                 loadingEl.classList.add('hidden');
 
                 if (filtered.length === 0) {
-                    showNoResults("查無結果", "找不到包含「" + term + "」的相關政策或代碼。");
+                    showNoResultsFound(`找不到包含「${term}」的相關合約或政策資料。`);
                 } else {
                     renderTable([headers, ...filtered]);
                 }
-            }, 400); 
+            }, 300); 
         }
 
-        // 輸入框清空監控
+        // 當使用者刪除搜尋字串時，自動恢復完整列表
         document.getElementById('searchInput').addEventListener('input', function(e) {
             if (e.target.value.trim() === "") {
                 renderTable(allData);

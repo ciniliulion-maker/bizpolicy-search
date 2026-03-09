@@ -86,10 +86,10 @@
                 </div>
             </div>
 
-            <!-- 載入中 -->
+            <!-- 載入中動畫 (包含初始載入與搜尋中) -->
             <div id="loading" class="flex flex-col items-center justify-center py-20 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
-                <p class="text-slate-400 font-medium">正在載入最新報價與政策資料...</p>
+                <p id="loadingText" class="text-slate-400 font-medium text-lg">正在處理中...</p>
             </div>
 
             <!-- 表格區 -->
@@ -156,7 +156,11 @@
         }
 
         async function fetchSheetData() {
-            document.getElementById('loading').classList.remove('hidden');
+            const loadingEl = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            loadingText.innerText = "正在載入最新報價與政策資料...";
+            loadingEl.classList.remove('hidden');
+
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
             
             try {
@@ -179,7 +183,7 @@
             } catch (err) {
                 console.error(err);
             } finally {
-                document.getElementById('loading').classList.add('hidden');
+                loadingEl.classList.add('hidden');
             }
         }
 
@@ -191,7 +195,6 @@
 
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
 
-            // 如果 rows 只有標題列（length 為 1）或完全為空
             if (rows.length <= 1) {
                 tableContainer.classList.add('hidden');
                 return;
@@ -200,7 +203,6 @@
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
 
-            // 處理表頭
             const headers = rows[0];
             const headerRow = document.createElement('tr');
             headers.forEach(text => {
@@ -211,7 +213,6 @@
             });
             headerEl.appendChild(headerRow);
 
-            // 處理內容
             rows.slice(1).forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50/50 transition-colors";
@@ -231,52 +232,58 @@
             });
         }
 
-        // 執行搜尋邏輯
+        // 執行搜尋邏輯 (增加動畫效果)
         function performSearch() {
             const term = document.getElementById('searchInput').value.toLowerCase().trim();
             const noResultsEl = document.getElementById('noResults');
             const tableContainer = document.getElementById('table-container');
-            
+            const loadingEl = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+
             if (allData.length === 0) return;
 
-            const headers = allData[0];
-            const content = allData.slice(1);
+            // 顯示搜尋中動畫
+            tableContainer.classList.add('hidden');
+            noResultsEl.classList.add('hidden');
+            loadingText.innerText = "查詢中...";
+            loadingEl.classList.remove('hidden');
 
-            // 如果搜尋框是空的，恢復顯示全部
-            if (term === "") {
-                renderTable(allData);
-                noResultsEl.classList.add('hidden');
-                return;
-            }
+            // 使用 setTimeout 模擬搜尋處理，讓使用者看到轉圈圈
+            setTimeout(() => {
+                const headers = allData[0];
+                const content = allData.slice(1);
 
-            const filtered = content.filter(row => {
-                return row.some(cell => {
-                    const cellStr = String(cell).toLowerCase();
-                    
-                    // 基本包含比對
-                    if (cellStr.includes(term)) return true;
+                if (term === "") {
+                    renderTable(allData);
+                    loadingEl.classList.add('hidden');
+                    return;
+                }
 
-                    // 特殊日期比對：如果輸入 2/12，嘗試匹配 02/12 或 202X/2/12
-                    if (term.includes('/') && term.length >= 3) {
-                        const parts = term.split('/');
-                        const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
-                        if (regex.test(cellStr)) return true;
-                    }
-                    
-                    return false;
+                const filtered = content.filter(row => {
+                    return row.some(cell => {
+                        const cellStr = String(cell).toLowerCase();
+                        if (cellStr.includes(term)) return true;
+                        if (term.includes('/') && term.length >= 3) {
+                            const parts = term.split('/');
+                            const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
+                            if (regex.test(cellStr)) return true;
+                        }
+                        return false;
+                    });
                 });
-            });
-            
-            if (filtered.length === 0) {
-                tableContainer.classList.add('hidden');
-                noResultsEl.classList.remove('hidden');
-            } else {
-                renderTable([headers, ...filtered]);
-                noResultsEl.classList.add('hidden');
-            }
+                
+                loadingEl.classList.add('hidden');
+
+                if (filtered.length === 0) {
+                    tableContainer.classList.add('hidden');
+                    noResultsEl.classList.remove('hidden');
+                } else {
+                    renderTable([headers, ...filtered]);
+                    noResultsEl.classList.add('hidden');
+                }
+            }, 600); // 模擬 0.6 秒的處理時間
         }
 
-        // 當輸入框清空時，自動還原完整清單並隱藏「查無資料」
         document.getElementById('searchInput').addEventListener('input', function(e) {
             if (e.target.value.trim() === "") {
                 renderTable(allData);

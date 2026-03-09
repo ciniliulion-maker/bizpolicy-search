@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>試算表資料查詢系統</title>
-    <!-- 引入 Tailwind CSS 美化介面 -->
+    <title>差旅政策與報價查詢系統</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google 身份驗證 SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        /* 載入動畫轉圈圈 */
         .loader {
             border-top-color: #3b82f6;
             animation: spinner 1.5s linear infinite;
@@ -18,18 +17,32 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* 針對長文本欄位的優化：允許折行並限制寬度 */
+        .content-cell {
+            min-width: 200px;
+            max-width: 400px;
+            white-space: normal !important;
+            word-break: break-all;
+        }
+        /* 固定表頭 */
+        .table-sticky-header th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8fafc;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
 
-    <div id="app" class="max-w-6xl mx-auto px-4 py-8">
-        <!-- 頂部標題區 -->
+    <div id="app" class="max-w-[95%] mx-auto px-4 py-8">
+        <!-- 標題區 -->
         <header class="mb-10 text-center">
-            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">試算表資料查詢系統</h1>
-            <p class="text-slate-500">請使用具備權限的 Google 帳號登入</p>
+            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">企業客戶差旅政策查詢</h1>
+            <p class="text-slate-500">法人代碼 / 政策規範 / 報價策略 即時檢索</p>
         </header>
 
-        <!-- 登入介面 (未驗證時顯示) -->
+        <!-- 登入介面 -->
         <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-slate-100 max-w-xl mx-auto">
             <div class="mb-8 p-4 bg-blue-50 rounded-full text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,64 +51,60 @@
             </div>
             <h2 class="text-2xl font-bold text-slate-800 mb-4">身份驗證</h2>
             <p class="text-slate-600 mb-8 text-center px-6">
-                本系統僅限授權人員使用，請點擊下方按鈕進行 Google 帳號權限驗證。
+                本系統包含敏感報價資訊，請使用具備權限的 Google 帳號登入。
             </p>
             <button onclick="handleAuthClick()" class="flex items-center px-8 py-4 bg-white border border-slate-300 rounded-2xl shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-300 text-slate-700 font-bold group">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-4 group-hover:scale-110 transition-transform" alt="Google">
-                透過 Google 帳號登入
+                驗證帳號權限
             </button>
-            <p id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4">驗證失敗：請確保您的 Email 在試算表的共用名單中。</p>
+            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100"></div>
         </div>
 
-        <!-- 查詢介面 (驗證成功後顯示) -->
+        <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
             <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 mb-8">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <!-- 搜尋輸入框 -->
                     <div class="relative flex-1">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <input type="text" id="searchInput" placeholder="輸入關鍵字自動過濾內容..." 
-                            class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-medium">
+                        <input type="text" id="searchInput" placeholder="搜尋法人代碼、日期 (如 2/12) 或 政策關鍵字..." 
+                            class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold">
                     </div>
-                    <!-- 帳號動作 -->
-                    <button onclick="signOut()" class="px-6 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出 / 切換帳號</button>
+                    <button onclick="signOut()" class="px-6 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出</button>
                 </div>
             </div>
 
-            <!-- 資料讀取中 -->
+            <!-- 載入中 -->
             <div id="loading" class="flex flex-col items-center justify-center py-20 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
-                <p class="text-slate-400 font-medium text-lg">正在從雲端讀取資料...</p>
+                <p class="text-slate-400 font-medium">正在載入最新報價與政策資料...</p>
             </div>
 
             <!-- 表格區 -->
-            <div class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100">
+            <div id="table-container" class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
                 <table class="min-w-full divide-y divide-slate-100">
-                    <thead id="tableHeader" class="bg-slate-50/50"></thead>
+                    <thead id="tableHeader" class="table-sticky-header"></thead>
                     <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
                 </table>
             </div>
             
-            <!-- 無結果提示 -->
-            <p id="noResults" class="text-center py-20 text-slate-400 hidden font-medium text-lg">查無符合關鍵字的資料</p>
+            <p id="noResults" class="text-center py-20 text-slate-400 hidden font-medium text-lg">查無符合條件的資料</p>
         </div>
     </div>
 
     <script>
-        /** --- 設定區 (已填入您的設定) --- **/
+        /** --- 設定區 --- **/
         const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
-        const RANGE = '工作表1!A1:Z200'; // 請確認分頁標籤名稱正確
+        const RANGE = '工作表1!A1:Z1000'; 
 
         let allData = [];
         let tokenClient;
         let accessToken = null;
 
-        // 初始化 Google Auth 系統
         window.onload = function() {
             if (typeof google !== 'undefined') {
                 tokenClient = google.accounts.oauth2.initTokenClient({
@@ -111,34 +120,25 @@
             }
         };
 
-        // 登入按鈕點擊事件
         function handleAuthClick() {
-            if (tokenClient) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            }
+            tokenClient && tokenClient.requestAccessToken({prompt: 'consent'});
         }
 
-        // 登出與重置畫面
         function signOut() {
             if (accessToken) {
                 google.accounts.oauth2.revokeToken(accessToken);
                 accessToken = null;
             }
-            document.getElementById('login-view').classList.remove('hidden');
-            document.getElementById('query-view').classList.add('hidden');
+            location.reload();
         }
 
         function showQueryView() {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('query-view').classList.remove('hidden');
-            document.getElementById('auth-error').classList.add('hidden');
         }
 
-        // 讀取試算表資料
         async function fetchSheetData() {
-            const loadingEl = document.getElementById('loading');
-            loadingEl.classList.remove('hidden');
-            
+            document.getElementById('loading').classList.remove('hidden');
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
             
             try {
@@ -147,24 +147,24 @@
                 });
                 const data = await response.json();
                 
+                if (data.error) {
+                    document.getElementById('auth-error').innerText = "讀取失敗：" + data.error.message;
+                    document.getElementById('auth-error').classList.remove('hidden');
+                    return;
+                }
+                
                 if (data.values) {
                     allData = data.values;
                     renderTable(allData);
-                } else {
-                    throw new Error('試算表中沒有找到資料');
+                    document.getElementById('table-container').classList.remove('hidden');
                 }
             } catch (err) {
-                console.error('API Error:', err);
-                const errorEl = document.getElementById('auth-error');
-                errorEl.innerText = "讀取資料失敗：請確認帳號是否有該試算表的存取權限。";
-                errorEl.classList.remove('hidden');
-                signOut();
+                console.error(err);
             } finally {
-                loadingEl.classList.add('hidden');
+                document.getElementById('loading').classList.add('hidden');
             }
         }
 
-        // 將資料繪製成 HTML 表格
         function renderTable(rows) {
             const headerEl = document.getElementById('tableHeader');
             const bodyEl = document.getElementById('tableBody');
@@ -172,47 +172,66 @@
 
             if (rows.length === 0) return;
 
-            // 表頭處理 (第一列)
+            // 處理表頭
             const headers = rows[0];
             const headerRow = document.createElement('tr');
             headers.forEach(text => {
                 const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider";
+                th.className = "px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200";
                 th.textContent = text;
                 headerRow.appendChild(th);
             });
             headerEl.appendChild(headerRow);
 
-            // 資料列處理 (其餘列)
-            const content = rows.slice(1);
-            content.forEach(row => {
+            // 處理內容
+            rows.slice(1).forEach(row => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/50 transition-colors border-b border-slate-50";
-                row.forEach(cell => {
+                tr.className = "hover:bg-blue-50/50 transition-colors";
+                headers.forEach((_, i) => {
                     const td = document.createElement('td');
-                    td.className = "px-6 py-4 whitespace-nowrap";
-                    td.textContent = cell;
+                    // 根據內容長度動態調整樣式
+                    const cellContent = row[i] || "";
+                    td.className = "px-6 py-4 border-b border-slate-50";
+                    if (cellContent.length > 20) {
+                        td.classList.add('content-cell');
+                    } else {
+                        td.classList.add('whitespace-nowrap');
+                    }
+                    td.textContent = cellContent;
                     tr.appendChild(td);
                 });
                 bodyEl.appendChild(tr);
             });
         }
 
-        // 搜尋過濾功能
+        // 搜尋功能
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
+            const term = e.target.value.toLowerCase().trim();
             if (allData.length === 0) return;
 
-            // 保留表頭，過濾內容
-            const filtered = [allData[0], ...allData.slice(1).filter(row => 
-                row.some(cell => String(cell).toLowerCase().includes(term))
-            )];
+            const headers = allData[0];
+            const content = allData.slice(1);
+
+            const filtered = content.filter(row => {
+                return row.some(cell => {
+                    const cellStr = String(cell).toLowerCase();
+                    
+                    // 基本包含比對
+                    if (cellStr.includes(term)) return true;
+
+                    // 特殊日期比對：如果輸入 2/12，嘗試匹配 02/12 或 202X/2/12
+                    if (term.includes('/') && term.length >= 3) {
+                        const parts = term.split('/');
+                        const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
+                        if (regex.test(cellStr)) return true;
+                    }
+                    
+                    return false;
+                });
+            });
             
-            renderTable(filtered);
-            
-            // 無結果處理
-            const noResults = document.getElementById('noResults');
-            noResults.classList.toggle('hidden', filtered.length > 1 || term === '');
+            renderTable([headers, ...filtered]);
+            document.getElementById('noResults').classList.toggle('hidden', filtered.length > 0 || term === '');
         });
     </script>
 </body>

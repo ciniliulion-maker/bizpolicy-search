@@ -62,11 +62,12 @@
             <p class="text-slate-600 mb-8 text-center px-6">
                 本系統包含內部報價資訊，請使用具備「試算表權限」的 Google 帳號登入。
             </p>
-            <button onclick="handleAuthClick()" class="flex items-center px-8 py-4 bg-white border border-slate-300 rounded-2xl shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-300 text-slate-700 font-bold group">
+            <button id="auth-btn" onclick="handleAuthClick()" class="flex items-center px-8 py-4 bg-white border border-slate-300 rounded-2xl shadow-sm hover:bg-slate-50 hover:shadow-md transition-all duration-300 text-slate-700 font-bold group">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-6 h-6 mr-4 group-hover:scale-110 transition-transform" alt="Google">
                 使用 Google 帳號登入
             </button>
-            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100"></div>
+            <!-- 錯誤訊息診斷區 -->
+            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100 max-w-sm mx-auto"></div>
         </div>
 
         <!-- 查詢介面 (驗證成功後顯示) -->
@@ -117,4 +118,19 @@
                         <li>您登入的帳號是否有該試算表的「<span class="font-bold">檢視權限</span>」？</li>
                     </ul>
                 </div>
-                <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2
+                <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新連線</button>
+            </div>
+
+            <!-- 資料表格 -->
+            <div id="table-container" class="overflow-x-auto bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead id="tableHeader" class="table-sticky-header"></thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
+                </table>
+            </div>
+            
+            <!-- 查無結果提示 -->
+            <div id="noResults" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                <div class="text-slate-200 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h

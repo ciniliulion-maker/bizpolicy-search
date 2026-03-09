@@ -63,17 +63,26 @@
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
             <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 mb-8">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <div class="relative flex-1">
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                    <!-- 搜尋欄位與按鈕組合 -->
+                    <div class="flex flex-1 relative group">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <input type="text" id="searchInput" placeholder="搜尋法人代碼、日期 (如 2/12) 或 政策關鍵字..." 
-                            class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold">
+                        <input type="text" id="searchInput" 
+                            placeholder="搜尋法人代碼、日期 (如 2/12) 或 政策關鍵字..." 
+                            class="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-l-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold"
+                            onkeypress="if(event.keyCode==13) performSearch()">
+                        
+                        <button onclick="performSearch()" 
+                            class="px-8 bg-blue-600 text-white font-bold rounded-r-2xl hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-lg shadow-blue-100">
+                            查詢
+                        </button>
                     </div>
-                    <button onclick="signOut()" class="px-6 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出</button>
+                    
+                    <button onclick="signOut()" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">登出</button>
                 </div>
             </div>
 
@@ -91,7 +100,16 @@
                 </table>
             </div>
             
-            <p id="noResults" class="text-center py-20 text-slate-400 hidden font-medium text-lg">查無符合條件的資料</p>
+            <!-- 查無資料狀態 -->
+            <div id="noResults" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                <div class="text-slate-200 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
+                <p class="text-slate-300 mt-2">請嘗試更換關鍵字或檢查輸入內容</p>
+            </div>
         </div>
     </div>
 
@@ -168,9 +186,20 @@
         function renderTable(rows) {
             const headerEl = document.getElementById('tableHeader');
             const bodyEl = document.getElementById('tableBody');
+            const tableContainer = document.getElementById('table-container');
+            const noResultsEl = document.getElementById('noResults');
+
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
 
-            if (rows.length === 0) return;
+            // 如果 rows 只有標題列（length 為 1）或完全為空
+            if (rows.length <= 1) {
+                tableContainer.classList.add('hidden');
+                // 只有在執行過搜尋且有輸入內容時才顯示「查無資料」，避免一開始就顯示
+                return;
+            }
+
+            tableContainer.classList.remove('hidden');
+            noResultsEl.classList.add('hidden');
 
             // 處理表頭
             const headers = rows[0];
@@ -189,7 +218,6 @@
                 tr.className = "hover:bg-blue-50/50 transition-colors";
                 headers.forEach((_, i) => {
                     const td = document.createElement('td');
-                    // 根據內容長度動態調整樣式
                     const cellContent = row[i] || "";
                     td.className = "px-6 py-4 border-b border-slate-50";
                     if (cellContent.length > 20) {
@@ -204,13 +232,23 @@
             });
         }
 
-        // 搜尋功能
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase().trim();
+        // 執行搜尋邏輯
+        function performSearch() {
+            const term = document.getElementById('searchInput').value.toLowerCase().trim();
+            const noResultsEl = document.getElementById('noResults');
+            const tableContainer = document.getElementById('table-container');
+            
             if (allData.length === 0) return;
 
             const headers = allData[0];
             const content = allData.slice(1);
+
+            // 如果搜尋框是空的，恢復顯示全部
+            if (term === "") {
+                renderTable(allData);
+                noResultsEl.classList.add('hidden');
+                return;
+            }
 
             const filtered = content.filter(row => {
                 return row.some(cell => {
@@ -230,8 +268,21 @@
                 });
             });
             
-            renderTable([headers, ...filtered]);
-            document.getElementById('noResults').classList.toggle('hidden', filtered.length > 0 || term === '');
+            if (filtered.length === 0) {
+                tableContainer.classList.add('hidden');
+                noResultsEl.classList.remove('hidden');
+            } else {
+                renderTable([headers, ...filtered]);
+                noResultsEl.classList.add('hidden');
+            }
+        }
+
+        // 當輸入框清空時，自動還原完整清單並隱藏「查無資料」
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            if (e.target.value.trim() === "") {
+                renderTable(allData);
+                document.getElementById('noResults').classList.add('hidden');
+            }
         });
     </script>
 </body>

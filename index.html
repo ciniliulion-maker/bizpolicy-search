@@ -107,8 +107,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
-                <p class="text-slate-300 mt-2">請嘗試更換關鍵字或檢查輸入內容</p>
+                <h3 id="noResultsTitle" class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
+                <p id="noResultsDesc" class="text-slate-300 mt-2">請嘗試更換關鍵字或檢查輸入內容</p>
             </div>
         </div>
     </div>
@@ -175,13 +175,17 @@
                     return;
                 }
                 
-                if (data.values) {
+                if (data.values && data.values.length > 0) {
                     allData = data.values;
                     renderTable(allData);
                     document.getElementById('table-container').classList.remove('hidden');
+                } else {
+                    allData = [];
+                    showNoResults("雲端試算表內目前沒有任何資料", "請確認分頁名稱是否正確，或試算表內是否已有內容。");
                 }
             } catch (err) {
                 console.error(err);
+                showNoResults("連線發生錯誤", "無法連線至 Google 試算表，請檢查您的網路或 Client ID 設定。");
             } finally {
                 loadingEl.classList.add('hidden');
             }
@@ -232,7 +236,19 @@
             });
         }
 
-        // 執行搜尋邏輯 (增加動畫效果)
+        function showNoResults(title, desc) {
+            const noResultsEl = document.getElementById('noResults');
+            const titleEl = document.getElementById('noResultsTitle');
+            const descEl = document.getElementById('noResultsDesc');
+            
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+            
+            noResultsEl.classList.remove('hidden');
+            document.getElementById('table-container').classList.add('hidden');
+        }
+
+        // 執行搜尋邏輯 (增加動畫效果與防呆)
         function performSearch() {
             const term = document.getElementById('searchInput').value.toLowerCase().trim();
             const noResultsEl = document.getElementById('noResults');
@@ -240,15 +256,19 @@
             const loadingEl = document.getElementById('loading');
             const loadingText = document.getElementById('loadingText');
 
-            if (allData.length === 0) return;
+            // 如果 allData 還是空的，嘗試重新抓取一次
+            if (allData.length === 0) {
+                fetchSheetData();
+                return;
+            }
 
             // 顯示搜尋中動畫
             tableContainer.classList.add('hidden');
             noResultsEl.classList.add('hidden');
-            loadingText.innerText = "查詢中...";
+            loadingText.innerText = "正在查詢比對資料...";
             loadingEl.classList.remove('hidden');
 
-            // 使用 setTimeout 模擬搜尋處理，讓使用者看到轉圈圈
+            // 使用 setTimeout 模擬搜尋處理過程
             setTimeout(() => {
                 const headers = allData[0];
                 const content = allData.slice(1);
@@ -275,13 +295,12 @@
                 loadingEl.classList.add('hidden');
 
                 if (filtered.length === 0) {
-                    tableContainer.classList.add('hidden');
-                    noResultsEl.classList.remove('hidden');
+                    showNoResults("查無符合條件的資料", "找不到關鍵字：「" + term + "」，請更換搜尋詞後再試一次。");
                 } else {
                     renderTable([headers, ...filtered]);
                     noResultsEl.classList.add('hidden');
                 }
-            }, 600); // 模擬 0.6 秒的處理時間
+            }, 600); 
         }
 
         document.getElementById('searchInput').addEventListener('input', function(e) {

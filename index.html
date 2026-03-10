@@ -49,7 +49,7 @@
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式 (紅色加粗) - 恢復此規則 */
+        /* 數字高亮樣式 (紅色加粗) */
         .highlight-num {
             color: #dc2626; 
             font-weight: 800;
@@ -228,7 +228,7 @@
                 <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新讀取資料</button>
             </div>
 
-            <!-- 結果筆數顯示區域 (修正位置與視覺) -->
+            <!-- 結果筆數顯示區域 (位於表格左上方) -->
             <div id="result-count" class="mb-3 px-4 py-1 text-sm font-bold text-slate-500 hidden border-l-4 border-blue-500 bg-blue-50/50 inline-block rounded-r-lg"></div>
 
             <!-- 表格區域 -->
@@ -248,7 +248,7 @@
                     </svg>
                 </div>
                 <h3 class="text-xl font-bold text-slate-400">跨區域搜尋：查無符合條件的資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
+                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤，或是您目前對某些分頁無檢視權限。</p>
             </div>
         </div>
     </div>
@@ -452,14 +452,19 @@
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
-        // 幣別高亮邏輯
+        // 幣別高亮邏輯：加粗 USD, TWD 等代碼
         function highlightCurrencies(text) {
             if (!text) return "";
             const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 數字高亮邏輯 (恢復紅色標示)
+        // 關鍵字標示邏輯：針對文字本身加上淡粉紅底
+        function highlightJobKeywords(text) {
+            if (!text) return "";
+            return text.replace(/(職級|職稱)/g, '<span class="bg-rose-100 px-1 rounded">$1</span>');
+        }
+
         function highlightNumbers(text) {
             if (!text) return "";
             return text.replace(/([0-9]+|[一二三四五六七八九十百千萬零]+)/g, '<span class="highlight-num">$1</span>');
@@ -490,7 +495,7 @@
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
             
-            // 修正：更新並顯示搜尋筆數
+            // 更新並顯示搜尋筆數
             if (countEl) {
                 countEl.innerText = `共 ${dataRows.length} 筆搜尋結果`;
                 countEl.classList.remove('hidden');
@@ -526,10 +531,8 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 已移除：職稱、職級粉紅底規則
-
-                        // 針對特定三個欄位處理換行與數字高亮
-                        const autoFields = ["機票差旅政策", "酒店差旅政策", "報價策略"];
+                        // 優化：處理「開票改票流程規範」與特定政策欄位的換行與數字高亮
+                        const autoFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範"];
                         if (autoFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
@@ -542,8 +545,8 @@
                         // 處理標註與高亮
                         let html = boldMatches(cellContent, lastSearchTerm);
                         html = highlightCurrencies(html);
+                        html = highlightJobKeywords(html); // 標示職級/職稱淡紅底色
                         
-                        // 恢復數字紅字標示
                         if (autoFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }

@@ -49,16 +49,18 @@
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式 (紅色加粗) */
+        /* 數字高亮樣式 (紅色加粗) - 恢復此規則 */
         .highlight-num {
-            color: #dc2626; /* Tailwind red-600 */
+            color: #dc2626; 
             font-weight: 800;
         }
+        
         /* 搜尋詞匹配樣式 (藍色加粗) */
         .match-bold {
-            color: #2563eb; /* Tailwind blue-600 */
+            color: #2563eb; 
             font-weight: 800;
         }
+        
         /* 幣別高亮樣式 (純加粗) */
         .currency-bold {
             font-weight: 800;
@@ -94,7 +96,7 @@
             text-align: center;
             font-weight: 700;
             color: #3b82f6;
-            background-color: #eff6ff; /* 輕微淺藍背景區分 */
+            background-color: #eff6ff;
         }
 
         /* 底部滑動提示通用樣式 */
@@ -125,10 +127,6 @@
             background-color: rgba(29, 78, 216, 1);
             transform: translateY(-2px) scale(1.05);
             box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.6);
-        }
-
-        .scroll-hint-btn:active {
-            transform: translateY(0) scale(0.95);
         }
 
         .scroll-hint-btn.show {
@@ -230,8 +228,8 @@
                 <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新讀取資料</button>
             </div>
 
-            <!-- 結果筆數顯示區域 -->
-            <div id="result-count" class="mb-3 px-4 text-sm font-bold text-slate-500 hidden border-l-4 border-blue-500"></div>
+            <!-- 結果筆數顯示區域 (修正位置與視覺) -->
+            <div id="result-count" class="mb-3 px-4 py-1 text-sm font-bold text-slate-500 hidden border-l-4 border-blue-500 bg-blue-50/50 inline-block rounded-r-lg"></div>
 
             <!-- 表格區域 -->
             <div class="relative">
@@ -250,7 +248,7 @@
                     </svg>
                 </div>
                 <h3 class="text-xl font-bold text-slate-400">跨區域搜尋：查無符合條件的資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤，或是您目前對某些分頁無檢視權限。</p>
+                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
             </div>
         </div>
     </div>
@@ -454,13 +452,14 @@
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
-        // 幣別高亮邏輯：加粗 USD, TWD, HKD 等代碼
+        // 幣別高亮邏輯
         function highlightCurrencies(text) {
             if (!text) return "";
             const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
+        // 數字高亮邏輯 (恢復紅色標示)
         function highlightNumbers(text) {
             if (!text) return "";
             return text.replace(/([0-9]+|[一二三四五六七八九十百千萬零]+)/g, '<span class="highlight-num">$1</span>');
@@ -482,7 +481,7 @@
 
             if (!dataRows || dataRows.length === 0) {
                 tableContainer.classList.add('hidden');
-                countEl.classList.add('hidden');
+                if (countEl) countEl.classList.add('hidden');
                 noResultsEl.classList.remove('hidden');
                 updateScrollHints();
                 return;
@@ -491,9 +490,11 @@
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
             
-            // 更新並顯示搜尋筆數
-            countEl.innerText = `共 ${dataRows.length} 筆搜尋結果`;
-            countEl.classList.remove('hidden');
+            // 修正：更新並顯示搜尋筆數
+            if (countEl) {
+                countEl.innerText = `共 ${dataRows.length} 筆搜尋結果`;
+                countEl.classList.remove('hidden');
+            }
 
             const headerRow = document.createElement('tr');
             DISPLAY_CONFIG.forEach((config, index) => {
@@ -542,6 +543,7 @@
                         let html = boldMatches(cellContent, lastSearchTerm);
                         html = highlightCurrencies(html);
                         
+                        // 恢復數字紅字標示
                         if (autoFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }
@@ -589,7 +591,8 @@
 
         function showNoResultsFound(detailMsg) {
             document.getElementById('table-container').classList.add('hidden');
-            document.getElementById('result-count').classList.add('hidden');
+            const countEl = document.getElementById('result-count');
+            if (countEl) countEl.classList.add('hidden');
             const noResultsEl = document.getElementById('noResults');
             noResultsEl.classList.remove('hidden');
             if(detailMsg) document.getElementById('noResultsDetail').innerText = detailMsg;
@@ -608,7 +611,7 @@
             if (allMergedData.length === 0) { fetchSheetData(); return; }
             if (term === "") { 
                 tableContainer.classList.add('hidden'); 
-                countEl.classList.add('hidden');
+                if (countEl) countEl.classList.add('hidden');
                 noResultsEl.classList.add('hidden'); 
                 updateScrollHints(); 
                 return; 
@@ -616,7 +619,7 @@
 
             if (!skipLoading) {
                 tableContainer.classList.add('hidden'); 
-                countEl.classList.add('hidden');
+                if (countEl) countEl.classList.add('hidden');
                 noResultsEl.classList.add('hidden'); 
                 loadingEl.classList.remove('hidden');
             }
@@ -651,7 +654,8 @@
             if (e.target.value.trim() === "") {
                 lastSearchTerm = "";
                 document.getElementById('table-container').classList.add('hidden');
-                document.getElementById('result-count').classList.add('hidden');
+                const countEl = document.getElementById('result-count');
+                if (countEl) countEl.classList.add('hidden');
                 document.getElementById('noResults').classList.add('hidden');
                 updateScrollHints();
             }

@@ -356,7 +356,7 @@
             container.innerHTML = '';
 
             DISPLAY_CONFIG.forEach((config, index) => {
-                // 修正：序號欄位不產生核選方塊
+                // 序號欄位不產生核選方塊
                 if (config.isSN) return;
 
                 const label = document.createElement('label');
@@ -388,7 +388,7 @@
             checkboxes.forEach((cb) => {
                 cb.checked = isVisible;
             });
-            // 修正：手動更新對應的 Visibility，排除序號欄位（index 0）
+            // 手動更新對應的 Visibility，排除序號欄位（index 0）
             columnVisibility.forEach((_, idx) => {
                 if (idx !== 0) columnVisibility[idx] = isVisible;
             });
@@ -480,17 +480,21 @@
                 bodyEl.appendChild(tr);
             });
             
-            // 渲染後檢查捲軸
+            // 渲染後檢查捲軸，延遲以確保 DOM 已渲染
             setTimeout(() => updateScrollHint(true), 100);
         }
 
-        // 優化：水平滾動提示邏輯 (固定於螢幕下方)
+        // 核心修正：水平滾動提示邏輯
         function updateScrollHint(shouldCheck) {
             const container = document.getElementById('table-container');
             const hint = document.getElementById('scroll-hint');
             if (!container || !hint) return;
 
-            if (shouldCheck && container.scrollWidth > container.clientWidth) {
+            // 只有當表格容器不是隱藏狀態，且寬度確實超出時，才顯示提示
+            const isVisible = !container.classList.contains('hidden');
+            const isOverflowing = container.scrollWidth > container.clientWidth;
+
+            if (shouldCheck && isVisible && isOverflowing) {
                 hint.classList.remove('hidden');
                 // 使用者開始滾動後隱藏提示
                 container.onscroll = () => hint.classList.add('hidden');

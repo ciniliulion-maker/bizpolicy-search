@@ -458,9 +458,20 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
+        // 優化：數字高亮邏輯 (排除項目編號如 1. 2.)
         function highlightNumbers(text) {
             if (!text) return "";
-            return text.replace(/([0-9]+|[一二三四五六七八九十百千萬零]+)/g, '<span class="highlight-num">$1</span>');
+            // 先找出數字跟點的組合 (項目符號) 暫時保護
+            // 使用正則表達式，只有當數字「不是」緊跟著點 (項目符號) 時，才標紅。
+            // 或是更簡單的作法：先處理項目符號，再標紅其他數字。
+            return text.replace(/([0-9]+(\.)?|[一二三四五六七八九十百千萬零]+)/g, (match, p1, p2) => {
+                if (p2 === '.') {
+                    // 如果數字後面有小數點（且被辨識為項目編號），則維持原樣
+                    return match;
+                }
+                // 一般數字，標示為紅色加粗
+                return `<span class="highlight-num">${match}</span>`;
+            });
         }
 
         function boldMatches(text, term) {
@@ -516,11 +527,14 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
+                        // 修正：特定內容（職稱、職級）標示淡紅底
                         if (cellContent.includes("職稱") || cellContent.includes("職級")) {
                             td.classList.add('bg-red-50');
                         }
 
-                        if (["機票差旅政策", "酒店差旅政策", "報價策略"].includes(config.display)) {
+                        // 修改：新增「開票改票流程規範」至自動換行欄位清單
+                        const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範"];
+                        if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
                             cellContent = cellContent.replace(/(?!^)(\d+\.)/g, '<br>$1');
@@ -529,15 +543,12 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 處理搜尋標藍
+                        // 處理標註與高亮
                         let html = boldMatches(cellContent, lastSearchTerm);
-                        
-                        // 處理幣別標粗
                         html = highlightCurrencies(html);
-
-                        const targetFields = ["機票差旅政策", "酒店差旅政策", "報價策略"];
-                        if (targetFields.includes(config.display)) {
-                            // 處理數字標紅
+                        
+                        // 修改：根據欄位清單標示數字紅字
+                        if (autoWrapFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }
                         

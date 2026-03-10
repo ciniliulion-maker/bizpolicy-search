@@ -26,20 +26,23 @@
             vertical-align: top;
         }
         
-        /* 核心優化：固定表頭樣式 */
+        /* 核心修正：固定表頭樣式 */
+        /* 確保 th 具備背景色以遮擋下方捲動內容 */
         .table-sticky-header th {
             position: sticky;
-            top: -1px; /* 微調以消除邊界縫隙 */
+            top: 0;
             z-index: 40;
-            background-color: #f8fafc; /* 使用與表頭一致的底色 */
-            box-shadow: inset 0 -2px 0 #e2e8f0; /* 底線效果 */
+            background-color: #f8fafc;
+            box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0,0,0,0.05);
             white-space: nowrap;
         }
 
-        /* 確保水平捲動時，表頭也能跟著橫移 */
+        /* 修正：為容器設定最大高度，強制產生內部捲軸，確保 sticky 正常運作 */
         #table-container {
-            overflow-x: auto;
-            overflow-y: visible; /* 允許垂直方向露出 sticky 元素 */
+            overflow: auto;
+            max-height: 75vh; /* 限制表格最大高度，避免表頭隨頁面滑出螢幕 */
+            background-color: white;
+            border-radius: 1.5rem;
         }
 
         /* 數字高亮樣式 (紅色加粗) */
@@ -56,6 +59,7 @@
         /* 捲軸美化 */
         .custom-scrollbar::-webkit-scrollbar {
             height: 10px;
+            width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f1f1;
@@ -212,16 +216,16 @@
                     </svg>
                 </div>
                 <h3 class="text-xl font-extrabold text-slate-800 mb-2">資料讀取失敗</h3>
-                <p id="api-error-msg" class="text-red-600 font-medium mb-6">錯誤詳情：網路連線逾時</p>
+                <p id="api-error-msg" class="text-red-600 font-medium mb-6">原因：網路連線逾時</p>
                 <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新讀取資料</button>
             </div>
 
             <!-- 表格區域 -->
             <div class="relative">
-                <div id="table-container" class="custom-scrollbar bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
-                    <table id="main-table" class="min-w-full divide-y divide-slate-100 border-separate border-spacing-0">
+                <div id="table-container" class="custom-scrollbar shadow-xl border border-slate-100 hidden">
+                    <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
+                        <tbody id="tableBody" class="text-sm text-slate-600 font-medium"></tbody>
                     </table>
                 </div>
             </div>
@@ -263,7 +267,7 @@
             { original: "出差是否需經過核准", display: "需核淮出差" },
             { original: "開票&改票流程及規範說明", display: "開票改票流程規範" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票差旅政策" },
-            { original: "飯店費用預算/條件 HOTEL", display: "酒店差旅政策" },
+            { original: "飯店費用預預算/條件 HOTEL", display: "酒店差旅政策" },
             { original: "報價策略", display: "報價策略" },
             { original: "付款方式", display: "付款方式" },
             { original: "代轉開立", display: "代轉開立" },
@@ -479,7 +483,7 @@
 
             dataRows.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/50 transition-colors border-b border-slate-50 align-top";
+                tr.className = "hover:bg-blue-50/50 transition-colors align-top";
                 
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
@@ -512,6 +516,7 @@
                 bodyEl.appendChild(tr);
             });
 
+            // 重要：資料渲染後執行偵測
             setTimeout(updateScrollHints, 100);
             setTimeout(updateScrollHints, 600); 
             tableContainer.onscroll = updateScrollHints;

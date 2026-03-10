@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>差旅政策與報價查詢系統</title>
+    <title>跨區域差旅政策查詢系統</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google 身份驗證 SDK -->
@@ -36,7 +36,7 @@
             white-space: nowrap;
         }
 
-        /* 確保表格容器有捲動空間 */
+        /* 表格容器，處理捲動 */
         #table-container {
             overflow: auto;
             max-height: 80vh; /* 限制最大高度，讓表頭能在畫面內固定 */
@@ -73,12 +73,18 @@
             background: #2563eb;
         }
         
-        /* 序號欄位專用樣式 */
+        /* 專用窄欄位樣式 */
         .sn-cell {
             width: 60px;
             text-align: center;
             font-weight: 600;
             color: #64748b;
+        }
+        .source-cell {
+            width: 100px;
+            text-align: center;
+            font-weight: 700;
+            color: #3b82f6;
         }
 
         /* 底部滑動提示通用樣式 */
@@ -121,13 +127,8 @@
             pointer-events: auto; /* 顯示時可點擊 */
         }
 
-        #scroll-hint-right {
-            right: 2rem;
-        }
-
-        #scroll-hint-left {
-            left: 2rem;
-        }
+        #scroll-hint-right { right: 2rem; }
+        #scroll-hint-left { left: 2rem; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
@@ -135,8 +136,8 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <!-- 標題區 -->
         <header class="mb-10 text-center">
-            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">企業客戶差旅政策查詢</h1>
-            <p id="sub-title" class="text-slate-500 font-medium italic">行政-合約管理(台北)</p>
+            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">跨區域企業差旅政策查詢</h1>
+            <p id="sub-title" class="text-slate-500 font-medium italic">正在整合：台北、桃園、新竹、台中、台南、高雄分頁資料</p>
         </header>
 
         <!-- 登入介面 (未驗證時顯示) -->
@@ -172,7 +173,7 @@
                             </svg>
                         </span>
                         <input type="text" id="searchInput" 
-                            placeholder="企業代碼、業務姓名、企業戶名稱" 
+                            placeholder="跨區域搜尋：企業代碼、業務姓名、企業戶名稱" 
                             class="block w-full pl-12 pr-4 py-4 bg-slate-50 focus:bg-white outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold"
                             onkeydown="if(event.key === 'Enter') performSearch()">
                         
@@ -221,10 +222,10 @@
 
             <!-- 表格區域 -->
             <div class="relative">
-                <div id="table-container" class="overflow-x-auto custom-scrollbar bg-white shadow-xl border border-slate-100 hidden">
+                <div id="table-container" class="custom-scrollbar shadow-xl border border-slate-100 hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
+                        <tbody id="tableBody" class="text-sm text-slate-600 font-medium"></tbody>
                     </table>
                 </div>
             </div>
@@ -235,7 +236,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-slate-400">查無符合條件的資料</h3>
+                <h3 class="text-xl font-bold text-slate-400">跨區域搜尋：查無符合條件的資料</h3>
                 <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
             </div>
         </div>
@@ -252,13 +253,23 @@
     </div>
 
     <script>
-        /** --- 核心設定區 --- **/
+        /** --- 多分頁核心設定 --- **/
         const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
-        const RANGE = '行政-合約管理(台北)!A1:Z2000'; 
+        
+        // 設定要同步搜尋的所有分頁名稱
+        const TARGET_SHEETS = [
+            '行政-合約管理(台北)', 
+            '行政-合約管理(桃園)', 
+            '行政-合約管理(新竹)', 
+            '行政-合約管理(台中)',
+            '行政-合約管理(台南)',
+            '行政-合約管理(高雄)'
+        ];
 
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
+            { original: "區域來源", display: "區域", isSource: true }, // 自動標註來源
             { original: "法人代碼", display: "法人代碼" },
             { original: "企業同行名稱", display: "企業同行名稱" },
             { original: "主要服務單位", display: "主要服務單位" },
@@ -274,7 +285,7 @@
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "最近更新時間" }
         ];
 
-        let allData = [];
+        let allMergedData = []; // 儲存所有分頁合併後的內容列
         let currentRows = []; 
         let columnMapping = []; 
         let tokenClient = null;
@@ -284,9 +295,6 @@
         let lastSearchTerm = "";
 
         function initGoogleAuth() {
-            const btn = document.getElementById('auth-btn');
-            const btnText = document.getElementById('btn-text');
-
             if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
                 try {
                     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -303,8 +311,7 @@
                         },
                     });
                     isGoogleSdkLoaded = true;
-                    btn.disabled = false;
-                    btnText.innerText = "使用 Google 帳號登入";
+                    document.getElementById('auth-btn').disabled = false;
                 } catch (e) {
                     showError("系統初始化失敗，請重新整理頁面。");
                 }
@@ -316,10 +323,7 @@
         window.onload = initGoogleAuth;
 
         function handleAuthClick() {
-            if (!isGoogleSdkLoaded || !tokenClient) {
-                showError("系統還在準備中，請稍候再試。");
-                return;
-            }
+            if (!isGoogleSdkLoaded || !tokenClient) return;
             tokenClient.requestAccessToken({ prompt: 'consent' });
         }
 
@@ -348,9 +352,11 @@
             tableContainer.classList.add('hidden');
             loadingEl.classList.remove('hidden');
 
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
-            
             try {
+                // 使用 batchGet API 一次抓取多個範圍
+                const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z1500')}`).join('&');
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${rangesParam}`;
+                
                 const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
@@ -358,15 +364,32 @@
                 
                 if (data.error) throw new Error(data.error.message);
                 
-                if (data.values && data.values.length > 0) {
-                    allData = data.values;
-                    buildColumnMapping(allData[0]);
+                allMergedData = [];
+                let firstSheetHeaders = [];
+
+                if (data.valueRanges) {
+                    data.valueRanges.forEach((vr, index) => {
+                        const sheetName = TARGET_SHEETS[index].split('(')[1]?.replace(')', '') || TARGET_SHEETS[index];
+                        const rows = vr.values;
+                        if (rows && rows.length > 0) {
+                            if (index === 0) firstSheetHeaders = rows[0]; 
+                            
+                            rows.slice(1).forEach(row => {
+                                // 檢查是否為空列 (主要判斷前幾欄有無內容)
+                                if (row.length === 0 || (!row[1] && !row[2])) return;
+                                const rowWithMeta = [...row];
+                                rowWithMeta.__sheetSource = sheetName;
+                                allMergedData.push(rowWithMeta);
+                            });
+                        }
+                    });
+
+                    buildColumnMapping(firstSheetHeaders);
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
-                    currentRows = allData.slice(1);
+                    currentRows = allMergedData;
                 } else {
-                    allData = [];
-                    showNoResultsFound("試算表目前內容為空。");
+                    showNoResultsFound("試算表內目前無資料。");
                 }
             } catch (err) {
                 document.getElementById('api-error-msg').innerText = "原因：" + err.message;
@@ -379,10 +402,8 @@
         function buildColumnMapping(sheetHeaders) {
             columnMapping = [];
             DISPLAY_CONFIG.forEach(config => {
-                if (config.isSN) {
-                    columnMapping.push(-2);
-                    return;
-                }
+                if (config.isSN) { columnMapping.push(-2); return; }
+                if (config.isSource) { columnMapping.push(-3); return; }
                 const idx = sheetHeaders.findIndex(h => h.trim().includes(config.original.substring(0, 10)));
                 columnMapping.push(idx);
             });
@@ -391,28 +412,21 @@
         function initColumnFilters() {
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
-
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (config.isSN) return;
-
+                if (config.isSN || config.isSource) return;
                 const label = document.createElement('label');
                 label.className = "inline-flex items-center cursor-pointer group";
-                
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
                 checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
-                    if (!document.getElementById('table-container').classList.contains('hidden')) {
-                        renderTable(currentRows);
-                    }
+                    if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
-
                 const span = document.createElement('span');
                 span.className = "ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium";
                 span.textContent = config.display;
-
                 label.appendChild(checkbox);
                 label.appendChild(span);
                 container.appendChild(label);
@@ -421,33 +435,21 @@
 
         function toggleAllColumns(isVisible) {
             const checkboxes = document.getElementById('column-filters').querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach((cb) => {
-                cb.checked = isVisible;
-            });
+            checkboxes.forEach((cb) => cb.checked = isVisible);
             columnVisibility.forEach((_, idx) => {
-                if (idx !== 0) columnVisibility[idx] = isVisible;
+                if (idx > 1) columnVisibility[idx] = isVisible; 
             });
-
-            if (!document.getElementById('table-container').classList.contains('hidden')) {
-                renderTable(currentRows);
-            }
-        }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
         function highlightNumbers(text) {
             if (!text) return "";
-            const numRegex = /([0-9]+|[一二三四五六七八九十百千萬零]+)/g;
-            return text.replace(numRegex, (match) => {
-                return `<span class="highlight-num">${match}</span>`;
-            });
+            return text.replace(/([0-9]+|[一二三四五六七八九十百千萬零]+)/g, '<span class="highlight-num">$1</span>');
         }
 
         function boldMatches(text, term) {
             if (!text || !term) return text;
-            const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             return text.replace(regex, '<b class="match-bold">$1</b>');
         }
 
@@ -456,7 +458,6 @@
             const bodyEl = document.getElementById('tableBody');
             const tableContainer = document.getElementById('table-container');
             const noResultsEl = document.getElementById('noResults');
-
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
 
             if (!dataRows || dataRows.length === 0) {
@@ -475,6 +476,7 @@
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left text-xs font-extrabold text-slate-600 uppercase tracking-wider";
                 if(config.isSN) th.className += " sn-cell";
+                if(config.isSource) th.className += " source-cell";
                 th.textContent = config.display;
                 headerRow.appendChild(th);
             });
@@ -483,31 +485,26 @@
             dataRows.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50/50 transition-colors align-top";
-                
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
-                    
                     const td = document.createElement('td');
                     td.className = "px-6 py-5 border-b border-slate-100";
                     
                     if (config.isSN) {
                         td.className += " sn-cell";
                         td.textContent = rowIndex + 1;
+                    } else if (config.isSource) {
+                        td.className += " source-cell";
+                        td.textContent = row.__sheetSource || "未知";
                     } else {
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
-                        
-                        if (cellContent.length > 25) {
-                            td.classList.add('content-cell');
-                        } else {
-                            td.classList.add('whitespace-nowrap');
-                        }
+                        if (cellContent.length > 25) td.classList.add('content-cell');
+                        else td.classList.add('whitespace-nowrap');
 
                         let html = boldMatches(cellContent, lastSearchTerm);
                         const targetFields = ["機票差旅政策", "酒店差旅政策", "報價策略"];
-                        if (targetFields.includes(config.display)) {
-                            html = highlightNumbers(html);
-                        }
+                        if (targetFields.includes(config.display)) html = highlightNumbers(html);
                         td.innerHTML = html;
                     }
                     tr.appendChild(td);
@@ -515,7 +512,6 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 確保資料渲染後執行滾動提示偵測
             setTimeout(updateScrollHints, 150);
             tableContainer.onscroll = updateScrollHints;
         }
@@ -524,10 +520,7 @@
             const container = document.getElementById('table-container');
             if (!container) return;
             const scrollDist = container.clientWidth * 0.7; 
-            container.scrollBy({
-                left: direction === 'right' ? scrollDist : -scrollDist,
-                behavior: 'smooth'
-            });
+            container.scrollBy({ left: direction === 'right' ? scrollDist : -scrollDist, behavior: 'smooth' });
         }
 
         function updateScrollHints() {
@@ -548,17 +541,8 @@
             const isAtStart = container.scrollLeft <= 15;
             const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 25);
 
-            if (isOverflowing && !isAtEnd) {
-                hintRight.classList.add('show');
-            } else {
-                hintRight.classList.remove('show');
-            }
-
-            if (isOverflowing && !isAtStart) {
-                hintLeft.classList.add('show');
-            } else {
-                hintLeft.classList.remove('show');
-            }
+            if (isOverflowing && !isAtEnd) hintRight.classList.add('show'); else hintRight.classList.remove('show');
+            if (isOverflowing && !isAtStart) hintLeft.classList.add('show'); else hintLeft.classList.remove('show');
         }
 
         window.onresize = updateScrollHints;
@@ -567,9 +551,7 @@
             document.getElementById('table-container').classList.add('hidden');
             const noResultsEl = document.getElementById('noResults');
             noResultsEl.classList.remove('hidden');
-            if(detailMsg) {
-                document.getElementById('noResultsDetail').innerText = detailMsg;
-            }
+            if(detailMsg) document.getElementById('noResultsDetail').innerText = detailMsg;
             updateScrollHints();
         }
 
@@ -577,33 +559,19 @@
             const searchInput = document.getElementById('searchInput');
             const term = searchInput.value.toLowerCase().trim();
             lastSearchTerm = searchInput.value.trim(); 
-
             const noResultsEl = document.getElementById('noResults');
             const tableContainer = document.getElementById('table-container');
             const loadingEl = document.getElementById('loading');
 
-            if (allData.length === 0) {
-                fetchSheetData();
-                return;
-            }
-
-            if (term === "") {
-                tableContainer.classList.add('hidden');
-                noResultsEl.classList.add('hidden');
-                updateScrollHints();
-                return;
-            }
+            if (allMergedData.length === 0) { fetchSheetData(); return; }
+            if (term === "") { tableContainer.classList.add('hidden'); noResultsEl.classList.add('hidden'); updateScrollHints(); return; }
 
             if (!skipLoading) {
-                tableContainer.classList.add('hidden');
-                noResultsEl.classList.add('hidden');
-                loadingEl.classList.remove('hidden');
+                tableContainer.classList.add('hidden'); noResultsEl.classList.add('hidden'); loadingEl.classList.remove('hidden');
             }
 
             const searchAction = () => {
-                const content = allData.slice(1);
-
-                currentRows = content.filter(row => {
+                currentRows = allMergedData.filter(row => {
                     return row.some(cell => {
                         const cellStr = String(cell).toLowerCase();
                         if (cellStr.includes(term)) return true;
@@ -615,21 +583,12 @@
                         return false;
                     });
                 });
-                
                 if (!skipLoading) loadingEl.classList.add('hidden');
-
-                if (currentRows.length === 0) {
-                    showNoResultsFound(`找不到關於「${lastSearchTerm}」的資料內容。`);
-                } else {
-                    renderTable(currentRows);
-                }
+                if (currentRows.length === 0) showNoResultsFound(`跨分頁找不到關於「${lastSearchTerm}」的資料。`);
+                else renderTable(currentRows);
             };
 
-            if (skipLoading) {
-                searchAction();
-            } else {
-                setTimeout(searchAction, 400); 
-            }
+            if (skipLoading) searchAction(); else setTimeout(searchAction, 400); 
         }
 
         document.getElementById('searchInput').addEventListener('input', function(e) {

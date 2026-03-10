@@ -26,23 +26,22 @@
             vertical-align: top;
         }
         
-        /* 核心修正：固定表頭樣式 */
-        /* 確保 th 具備背景色以遮擋下方捲動內容 */
+        /* 核心修正：確保表頭固定在螢幕最上方 */
         .table-sticky-header th {
             position: sticky;
-            top: 0;
+            top: 0; /* 固定在視窗最頂部 */
             z-index: 40;
-            background-color: #f8fafc;
-            box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0,0,0,0.05);
+            background-color: #f8fafc; /* 必須給予實體背景色，否則會變透明 */
+            box-shadow: inset 0 -2px 0 #e2e8f0; /* 模擬底線，防止捲動時內容透出 */
             white-space: nowrap;
         }
 
-        /* 修正：為容器設定最大高度，強制產生內部捲軸，確保 sticky 正常運作 */
+        /* 表格容器僅處理橫向捲動，不限制高度以利 sticky 對齊視窗 */
         #table-container {
-            overflow: auto;
-            max-height: 75vh; /* 限制表格最大高度，避免表頭隨頁面滑出螢幕 */
+            overflow-x: auto;
+            overflow-y: visible; 
+            border-radius: 1rem;
             background-color: white;
-            border-radius: 1.5rem;
         }
 
         /* 數字高亮樣式 (紅色加粗) */
@@ -112,23 +111,14 @@
             box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.6);
         }
 
-        .scroll-hint-btn:active {
-            transform: translateY(0) scale(0.95);
-        }
-
         .scroll-hint-btn.show {
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
         }
 
-        #scroll-hint-right {
-            right: 2rem;
-        }
-
-        #scroll-hint-left {
-            left: 2rem;
-        }
+        #scroll-hint-right { right: 2rem; }
+        #scroll-hint-left { left: 2rem; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
@@ -140,7 +130,7 @@
             <p id="sub-title" class="text-slate-500 font-medium italic">行政-合約管理(台北)</p>
         </header>
 
-        <!-- 登入介面 (未驗證時顯示) -->
+        <!-- 登入介面 -->
         <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-slate-100 max-w-xl mx-auto">
             <div class="mb-8 p-4 bg-blue-50 rounded-full text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -161,7 +151,7 @@
             <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100 max-sm mx-auto"></div>
         </div>
 
-        <!-- 查詢介面 (驗證成功後顯示) -->
+        <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
             <!-- 搜尋與登出區 -->
             <div class="bg-white p-6 rounded-t-3xl shadow-lg border border-slate-100">
@@ -242,12 +232,10 @@
         </div>
     </div>
 
-    <!-- 右下角滑動提示按鈕 (向右) -->
+    <!-- 滑動提示按鈕 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </div>
-
-    <!-- 左下角滑動提示按鈕 (向左) -->
     <div id="scroll-hint-left" class="scroll-hint-btn" onclick="scrollTable('left')">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" style="animation-direction: reverse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> 向左滑動看前面資料
     </div>
@@ -267,7 +255,7 @@
             { original: "出差是否需經過核准", display: "需核淮出差" },
             { original: "開票&改票流程及規範說明", display: "開票改票流程規範" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票差旅政策" },
-            { original: "飯店費用預預算/條件 HOTEL", display: "酒店差旅政策" },
+            { original: "飯店費用預算/條件 HOTEL", display: "酒店差旅政策" },
             { original: "報價策略", display: "報價策略" },
             { original: "付款方式", display: "付款方式" },
             { original: "代轉開立", display: "代轉開立" },
@@ -474,7 +462,7 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left text-xs font-extrabold text-slate-600 uppercase tracking-wider border-b border-slate-200";
+                th.className = "px-6 py-4 text-left text-xs font-extrabold text-slate-600 uppercase tracking-wider";
                 if(config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
                 headerRow.appendChild(th);
@@ -516,7 +504,7 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 重要：資料渲染後執行偵測
+            // 修正：資料渲染後執行偵測
             setTimeout(updateScrollHints, 100);
             setTimeout(updateScrollHints, 600); 
             tableContainer.onscroll = updateScrollHints;

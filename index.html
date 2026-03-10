@@ -34,13 +34,7 @@
             vertical-align: top;
         }
 
-        /* 欄位寬度樣式 */
-        .w-6-char {
-            width: 6em;
-            min-width: 6em;
-            max-width: 6em;
-            white-space: normal !important;
-        }
+        /* 欄位寬度樣式定義 */
         .w-10-char {
             width: 10em;
             min-width: 10em;
@@ -66,7 +60,7 @@
             white-space: normal !important;
         }
 
-        /* 核心優化：固定表頭與 10pt 字級 */
+        /* 固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -86,24 +80,24 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* 內容字級 12pt */
+        /* 內容與核選清單字級 */
         .result-font-size {
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式：僅保留粗體 */
+        /* 數字僅粗體，無顏色 */
         .highlight-num {
             font-weight: 700;
             color: inherit;
         }
         
-        /* 搜尋詞標註 (僅加粗) */
+        /* 搜尋詞標註：僅加粗 */
         .match-bold {
             font-weight: 800;
             color: inherit;
         }
         
-        /* 職務藍色高亮 */
+        /* 職務藍色系高亮 */
         .job-keyword {
             color: #1e3a8a; 
             background-color: #eff6ff;
@@ -112,14 +106,13 @@
             font-weight: 800;
         }
 
-        /* 核准出差條件高亮：y 才標粉紅底並置中 */
+        /* 核准出差條件：Y 才標粉紅底 */
         .approval-y {
             background-color: #fff1f2 !important; 
             text-align: center !important;
             font-weight: 800;
         }
 
-        /* 區域來源標籤 */
         .region-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -152,7 +145,7 @@
             color: #94a3b8;
         }
 
-        /* 導航提示按鈕：藍色底色 */
+        /* 導航提示按鈕：藍色底 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
@@ -182,7 +175,7 @@
             pointer-events: auto;
         }
 
-        /* Google 標準白色按鈕樣式 - 圓弧造型 */
+        /* Google 標準白色按鈕 - 圓弧造型 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
@@ -213,7 +206,6 @@
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
-        <!-- 標題區 -->
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢</h1>
             <p id="sub-title" class="text-slate-400 font-medium text-sm italic">整合全台六大區域分頁即時數據</p>
@@ -260,7 +252,7 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區：Grid 網格排版 -->
+            <!-- 欄位控制區：Grid 佈局確保對齊 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -294,7 +286,7 @@
         </div>
     </div>
 
-    <!-- 左右導航提示 -->
+    <!-- 導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
@@ -317,7 +309,6 @@
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char" },
             { original: "主要服務單位", display: "服務單位" },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
-            // 規範：對應試算表中可能帶有換行的標題
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char" },
@@ -412,7 +403,7 @@
             finally { loadingEl.classList.add('hidden'); }
         }
 
-        // 核心修復：強化標題匹配，移除換行符號
+        // 優化標題匹配：移除隱藏的換行與空白
         function buildColumnMapping(sheetHeaders) {
             columnMapping = [];
             DISPLAY_CONFIG.forEach(config => {
@@ -476,6 +467,7 @@
             }).join('');
         }
 
+        // 數字加粗，不標紅
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
@@ -517,7 +509,6 @@
                 tableContainer.classList.add('hidden');
                 if (countEl) countEl.classList.add('hidden');
                 noResultsEl.classList.remove('hidden');
-                updateScrollHints();
                 return;
             }
 
@@ -559,21 +550,21 @@
                         let rawValue = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         let displayValue = rawValue;
 
-                        // 核心修正：核准出差邏輯
+                        // 核准出差轉換邏輯
                         if (config.isApproval) {
                             const v = rawValue.toString().trim();
                             if (v === "是") {
                                 displayValue = "Y";
-                                td.classList.add('approval-y'); // 只有 Y 標粉紅底並置中
+                                td.classList.add('approval-y'); 
                             } else if (v === "否") {
                                 displayValue = "N";
-                                td.classList.add('text-center'); // N 僅置中
+                                td.classList.add('text-center'); 
                             } else {
                                 displayValue = "";
                             }
                         }
 
-                        // 自動換行規則
+                        // 項目符號自動換行與符號保護
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             displayValue = displayValue.toString().replace(/\n/g, '<br>');
@@ -650,7 +641,6 @@
                 tableContainer.classList.add('hidden'); 
                 if (countEl) countEl.classList.add('hidden');
                 noResultsEl.classList.add('hidden'); 
-                updateScrollHints(); 
                 return; 
             }
 

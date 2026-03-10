@@ -34,7 +34,7 @@
             vertical-align: top;
         }
 
-        /* 依要求自定義欄位寬度 (使用 em 單位對應字元) */
+        /* 自定義欄位寬度 */
         .w-6-char {
             width: 6em;
             min-width: 6em;
@@ -59,8 +59,15 @@
             max-width: 25em;
             white-space: normal !important;
         }
+        /* 更新：機票政策 30 字元寬度 */
+        .w-30-char {
+            width: 30em;
+            min-width: 30em;
+            max-width: 30em;
+            white-space: normal !important;
+        }
 
-        /* 規範：固定表頭與 10pt 字級 */
+        /* 核心優化：固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -85,19 +92,19 @@
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式 (精緻的玫瑰紅) */
+        /* 數字高亮樣式：取消紅色，僅保留粗體 */
         .highlight-num {
-            color: #e11d48; 
             font-weight: 700;
+            color: inherit;
         }
         
-        /* 搜尋詞匹配樣式 (僅加粗) */
+        /* 搜尋詞匹配樣式 */
         .match-bold {
             font-weight: 800;
             color: inherit;
         }
         
-        /* 職務關鍵字高亮：藍色系高亮（深藍文字 + 淡藍底色） */
+        /* 職務關鍵字高亮：藍色系高亮 */
         .job-keyword {
             color: #1e3a8a; 
             background-color: #eff6ff;
@@ -146,7 +153,7 @@
             color: #94a3b8;
         }
 
-        /* 導航提示按鈕：藍色底色 */
+        /* 導航提示按鈕 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
@@ -176,7 +183,7 @@
             pointer-events: auto;
         }
 
-        /* Google 標準白色按鈕樣式 - 圓弧造型 */
+        /* Google 登入按鈕圓弧造型 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
@@ -254,7 +261,7 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區：Grid 網格排版 -->
+            <!-- 欄位控制區：Grid 排版 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -265,13 +272,11 @@
                 </div>
             </div>
 
-            <!-- 加載與錯誤 -->
+            <!-- 加載與筆數 -->
             <div id="loading" class="flex flex-col items-center justify-center py-24 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
-
-            <!-- 筆數提示 -->
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
 
             <!-- 表格區域 -->
@@ -315,10 +320,10 @@
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-25-char" },
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char" }, // 更新：寬度改為 30
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char" },
             { original: "報價策略", display: "報價策略", widthClass: "w-15-char" },
-            { original: "付款方式", display: "付款", widthClass: "w-6-char" },
+            { original: "付款方式", display: "付款", widthClass: "w-10-char" },
             { original: "代轉開立", display: "代轉" },
             { original: "注意事項", display: "注意事項" },
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間" }
@@ -455,7 +460,6 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 職務標示邏輯：深藍文字 + 淡藍底色
         function highlightJobKeywords(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
@@ -465,18 +469,18 @@
             }).join('');
         }
 
-        // 數字高亮邏輯：標紅、排除列表編號、公式保留
+        // 優化：數字僅加粗，不再標色
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
                 return part.replace(/(\*\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pStar, p1, p2, p3, p4) => {
-                    if (pStar) return `<span class="highlight-num">${match}</span>`; // 公式
+                    if (pStar) return `<span class="highlight-num">${match}</span>`; 
                     if (p1) {
                         const val = parseInt(p1.replace(/[^\d]/g, ''));
-                        if (val >= 100) return `<span class="highlight-num">${match}</span>`; // 數值
-                        return match; // 列表編號排除
+                        if (val >= 100) return `<span class="highlight-num">${match}</span>`; 
+                        return match; 
                     }
                     if (p2) return match; 
                     return `<span class="highlight-num">${match}</span>`;
@@ -484,7 +488,6 @@
             }).join('');
         }
 
-        // 搜尋結果標註：僅加粗，排除完全匹配與「公司」
         function boldMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
@@ -550,7 +553,6 @@
                         let rawValue = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         let displayValue = rawValue;
 
-                        // 核准出差轉換與底色
                         if (config.isApproval) {
                             td.classList.add('approval-cell');
                             const v = rawValue.trim();
@@ -559,12 +561,13 @@
                             else displayValue = "";
                         }
 
-                        // 自動換行規則
+                        // 更新換行規則：排除「+」號與「*」號後面的數字
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             displayValue = displayValue.replace(/\n/g, '<br>');
                             displayValue = displayValue.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            displayValue = displayValue.replace(/(?!^)(?<!\*)(\d+[\.\)])/g, '<br>$1');
+                            // (?<![\*\+]) 負向回瞻：排除前面是 * 或 + 的數字編號
+                            displayValue = displayValue.replace(/(?!^)(?<![\*\+])(\d+[\.\)])/g, '<br>$1');
                             displayValue = displayValue.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 

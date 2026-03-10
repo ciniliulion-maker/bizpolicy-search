@@ -525,10 +525,7 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 修正：特定內容（職稱、職級）標示淡紅底
-                        if (cellContent.includes("職稱") || cellContent.includes("職級")) {
-                            td.classList.add('bg-red-50');
-                        }
+                        // 已移除：職稱、職級粉紅底規則
 
                         // 針對特定三個欄位處理換行與數字高亮
                         const autoFields = ["機票差旅政策", "酒店差旅政策", "報價策略"];

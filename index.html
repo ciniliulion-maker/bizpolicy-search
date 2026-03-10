@@ -44,6 +44,11 @@
             border-radius: 1rem;
         }
 
+        /* 搜尋結果字級：12pt */
+        .result-font-size {
+            font-size: 12pt !important;
+        }
+
         /* 數字高亮樣式 (紅色加粗) */
         .highlight-num {
             color: #dc2626; /* Tailwind red-600 */
@@ -226,7 +231,7 @@
                 <div id="table-container" class="custom-scrollbar shadow-xl border border-slate-100 hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
-                        <tbody id="tableBody" class="text-sm text-slate-600 font-medium"></tbody>
+                        <tbody id="tableBody" class="text-slate-600 font-medium result-font-size"></tbody>
                     </table>
                 </div>
             </div>
@@ -507,6 +512,17 @@
                     } else {
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
+                        
+                        // 處理換行與項目符號邏輯
+                        if (["機票差旅政策", "酒店差旅政策", "報價策略"].includes(config.display)) {
+                            // 1. 處理原始資料中的換行符號
+                            cellContent = cellContent.replace(/\n/g, '<br>');
+                            // 2. 在項目符號前加入換行 (?!^ 排除字串開頭，避免首行多一個空行)
+                            cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
+                            // 3. 在數字編號前加入換行 (例如 1. 2. )
+                            cellContent = cellContent.replace(/(?!^)(\d+\.)/g, '<br>$1');
+                        }
+
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 

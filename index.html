@@ -24,6 +24,7 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* 預設長內容欄位樣式 */
         .content-cell {
             min-width: 280px;
             max-width: 550px;
@@ -31,6 +32,28 @@
             word-break: break-all;
             line-height: 1.7;
             vertical-align: top;
+        }
+
+        /* 依要求自定義欄位寬度 (使用 em 單位對應字元) */
+        .w-6-char {
+            width: 6em;
+            min-width: 6em;
+            white-space: normal !important;
+        }
+        .w-10-char {
+            width: 10em;
+            min-width: 10em;
+            white-space: normal !important;
+        }
+        .w-15-char {
+            width: 15em;
+            min-width: 15em;
+            white-space: normal !important;
+        }
+        .w-25-char {
+            width: 25em;
+            min-width: 25em;
+            white-space: normal !important;
         }
 
         /* 核心優化：固定表頭樣式 */
@@ -66,7 +89,7 @@
             font-weight: 700;
         }
         
-        /* 搜尋詞匹配樣式 (僅加粗，不標藍色與背景) */
+        /* 搜尋詞匹配樣式 (僅加粗) */
         .match-bold {
             font-weight: 800;
             color: inherit;
@@ -305,15 +328,15 @@
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
             { original: "法人代碼", display: "法人代碼" },
-            { original: "企業同行名稱", display: "企業名稱" },
+            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char" },
             { original: "主要服務單位", display: "服務單位" },
-            { original: "主要服務業務", display: "業務" },
+            { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
             { original: "出差是否需經過核准", display: "核准出差" },
-            { original: "開票&改票流程及規範說明", display: "開票流程" },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策" },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策" },
-            { original: "報價策略", display: "報價策略" },
-            { original: "付款方式", display: "付款" },
+            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-25-char" },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char" },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char" },
+            { original: "付款方式", display: "付款", widthClass: "w-6-char" }, // 優化：欄寬 6 字元
             { original: "代轉開立", display: "代轉" },
             { original: "注意事項", display: "注意事項" },
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間" }
@@ -517,14 +540,9 @@
         // 優化：搜尋結果中不再標示藍色文字與背景，僅加粗以供識別。若為「公司」則跳過。
         function boldMatches(text, term) {
             if (!text || !term) return text;
-            
-            // 根據要求：若搜尋字詞為「公司」，則不標記任何樣式
             if (term.trim() === '公司') return text;
-            
-            // 保護 HTML 標籤
             const parts = text.split(/(<[^>]+>)/g);
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
                 return part.replace(regex, '<b class="match-bold">$1</b>');
@@ -560,6 +578,11 @@
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                
+                // 應用自定義寬度類別
+                if (config.widthClass) th.classList.add(config.widthClass);
+                if (config.isSN) th.className += " sn-cell";
+                
                 th.textContent = config.display;
                 headerRow.appendChild(th);
             });
@@ -591,21 +614,23 @@
                             cellContent = cellContent.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 
-                        if (cellContent.length > 25) td.classList.add('content-cell');
-                        else td.classList.add('whitespace-nowrap');
+                        // 寬度邏輯與樣式應用
+                        if (config.widthClass) {
+                            td.classList.add(config.widthClass);
+                        } else if (cellContent.length > 25) {
+                            td.classList.add('content-cell');
+                        } else {
+                            td.classList.add('whitespace-nowrap');
+                        }
 
                         // 判斷是否為完全匹配。若完全匹配，依要求不加粗。
                         const isExactMatch = rawCellContent.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
                         let html = cellContent;
 
                         if (!isExactMatch) {
-                            // 先處理搜尋詞標註 (match-bold)
                             html = boldMatches(html, lastSearchTerm); 
-                            // 處理職稱相關藍色高亮 (job-keyword)
                             html = highlightJobKeywords(html); 
-                            // 處理幣別加粗
                             html = highlightCurrencies(html); 
-                            // 處理數字紅色高亮 (避開 HTML 標籤屬性)
                             if (autoWrapFields.includes(config.display)) {
                                 html = highlightNumbers(html);
                             }

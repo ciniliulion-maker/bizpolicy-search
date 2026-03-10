@@ -69,12 +69,11 @@
             color: #64748b;
         }
 
-        /* 右下角固定提示詞樣式 */
-        #scroll-hint {
+        /* 底部滑動提示通用樣式 */
+        .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
-            right: 2rem;
-            z-index: 9999; /* 確保在最上層 */
+            z-index: 9999;
             background-color: rgba(37, 99, 235, 0.95);
             color: white;
             padding: 0.75rem 1.5rem;
@@ -85,15 +84,30 @@
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            pointer-events: none;
+            cursor: pointer; /* 設為可點擊 */
             opacity: 0;
             transform: translateY(10px);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto; /* 啟用點擊事件 */
+            user-select: none;
         }
 
-        #scroll-hint.show {
+        .scroll-hint-btn:hover {
+            background-color: rgba(29, 78, 216, 1);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .scroll-hint-btn.show {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        #scroll-hint-right {
+            right: 2rem;
+        }
+
+        #scroll-hint-left {
+            left: 2rem;
         }
     </style>
 </head>
@@ -209,9 +223,14 @@
         </div>
     </div>
 
-    <!-- 右下角固定提示詞 -->
-    <div id="scroll-hint">
+    <!-- 右下角固定提示詞 (向右) -->
+    <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+    </div>
+
+    <!-- 左下角固定提示詞 (向左) -->
+    <div id="scroll-hint-left" class="scroll-hint-btn" onclick="scrollTable('left')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-bounce" style="animation-direction: reverse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> 向左回看前面資料
     </div>
 
     <script>
@@ -425,7 +444,7 @@
             if (!dataRows || dataRows.length === 0) {
                 tableContainer.classList.add('hidden');
                 noResultsEl.classList.remove('hidden');
-                updateScrollHint();
+                updateScrollHints();
                 return;
             }
 
@@ -478,41 +497,59 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 修正：增加兩次偵測，確保 DOM 完全渲染後的數值正確
-            setTimeout(updateScrollHint, 100);
-            setTimeout(updateScrollHint, 500); 
-            tableContainer.onscroll = updateScrollHint;
+            setTimeout(updateScrollHints, 100);
+            setTimeout(updateScrollHints, 500); 
+            tableContainer.onscroll = updateScrollHints;
         }
 
-        // 偵測是否顯示「向右滑動」提示詞 (核心修正邏輯)
-        function updateScrollHint() {
+        // 點擊提示按鈕後執行捲動
+        function scrollTable(direction) {
             const container = document.getElementById('table-container');
-            const hint = document.getElementById('scroll-hint');
+            if (!container) return;
+            const scrollAmount = container.clientWidth * 0.5; // 每次捲動半個螢幕寬
+            container.scrollBy({
+                left: direction === 'right' ? scrollAmount : -scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // 偵測是否顯示左右滑動提示詞
+        function updateScrollHints() {
+            const container = document.getElementById('table-container');
+            const hintRight = document.getElementById('scroll-hint-right');
+            const hintLeft = document.getElementById('scroll-hint-left');
             const queryView = document.getElementById('query-view');
 
-            if (!container || !hint || !queryView) return;
+            if (!container || !hintRight || !hintLeft || !queryView) return;
 
-            // 1. 如果不在查詢頁面，或表格隱藏，絕對不顯示
+            // 1. 如果不在查詢頁面，或表格隱藏，全部隱藏
             if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
-                hint.classList.remove('show');
+                hintRight.classList.remove('show');
+                hintLeft.classList.remove('show');
                 return;
             }
 
-            // 2. 核心判定：scrollWidth 是否真的大於 clientWidth (考慮 5px 誤差)
-            const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
-            
-            // 3. 判定是否已經滑動到底部 (考慮 15px 誤差)
+            // 2. 判斷捲軸狀態
+            const isAtStart = container.scrollLeft <= 10;
             const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 15);
+            const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
 
-            // 4. 只有當溢出 且 還沒到最右邊時，才顯示
+            // 右側提示：有溢出 且 還沒到底
             if (isOverflowing && !isAtEnd) {
-                hint.classList.add('show');
+                hintRight.classList.add('show');
             } else {
-                hint.classList.remove('show');
+                hintRight.classList.remove('show');
+            }
+
+            // 左側提示：有溢出 且 已經離開起始點
+            if (isOverflowing && !isAtStart) {
+                hintLeft.classList.add('show');
+            } else {
+                hintLeft.classList.remove('show');
             }
         }
 
-        window.onresize = updateScrollHint;
+        window.onresize = updateScrollHints;
 
         function showNoResultsFound(detailMsg) {
             document.getElementById('table-container').classList.add('hidden');
@@ -521,7 +558,7 @@
             if(detailMsg) {
                 document.getElementById('noResultsDetail').innerText = detailMsg;
             }
-            updateScrollHint();
+            updateScrollHints();
         }
 
         function performSearch(skipLoading = false) {
@@ -541,7 +578,7 @@
             if (term === "") {
                 tableContainer.classList.add('hidden');
                 noResultsEl.classList.add('hidden');
-                updateScrollHint();
+                updateScrollHints();
                 return;
             }
 
@@ -588,7 +625,7 @@
                 lastSearchTerm = "";
                 document.getElementById('table-container').classList.add('hidden');
                 document.getElementById('noResults').classList.add('hidden');
-                updateScrollHint();
+                updateScrollHints();
             }
         });
     </script>

@@ -34,7 +34,7 @@
             vertical-align: top;
         }
 
-        /* 自定義欄位寬度 */
+        /* 欄位寬度樣式 */
         .w-6-char {
             width: 6em;
             min-width: 6em;
@@ -59,7 +59,6 @@
             max-width: 25em;
             white-space: normal !important;
         }
-        /* 更新：機票政策 30 字元寬度 */
         .w-30-char {
             width: 30em;
             min-width: 30em;
@@ -67,7 +66,7 @@
             white-space: normal !important;
         }
 
-        /* 核心優化：固定表頭樣式 */
+        /* 核心優化：固定表頭與 10pt 字級 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -98,13 +97,13 @@
             color: inherit;
         }
         
-        /* 搜尋詞匹配樣式 */
+        /* 搜尋詞標註 (僅加粗) */
         .match-bold {
             font-weight: 800;
             color: inherit;
         }
         
-        /* 職務關鍵字高亮：藍色系高亮 */
+        /* 職務藍色高亮 */
         .job-keyword {
             color: #1e3a8a; 
             background-color: #eff6ff;
@@ -113,11 +112,11 @@
             font-weight: 800;
         }
 
-        /* 核准出差專用：粉紅底 */
-        .approval-cell {
-            background-color: #fff1f2; 
-            font-weight: 700;
-            text-align: center;
+        /* 核准出差條件高亮：y 才標粉紅底並置中 */
+        .approval-y {
+            background-color: #fff1f2 !important; 
+            text-align: center !important;
+            font-weight: 800;
         }
 
         /* 區域來源標籤 */
@@ -153,7 +152,7 @@
             color: #94a3b8;
         }
 
-        /* 導航提示按鈕 */
+        /* 導航提示按鈕：藍色底色 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
@@ -183,7 +182,7 @@
             pointer-events: auto;
         }
 
-        /* Google 登入按鈕圓弧造型 */
+        /* Google 標準白色按鈕樣式 - 圓弧造型 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
@@ -261,7 +260,7 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區：Grid 排版 -->
+            <!-- 欄位控制區：Grid 網格排版 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -318,9 +317,10 @@
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char" },
             { original: "主要服務單位", display: "服務單位" },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
+            // 修正：對應試算表中的完整標題
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char" }, // 更新：寬度改為 30
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char" },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char" },
             { original: "報價策略", display: "報價策略", widthClass: "w-15-char" },
             { original: "付款方式", display: "付款", widthClass: "w-10-char" },
@@ -417,7 +417,12 @@
             DISPLAY_CONFIG.forEach(config => {
                 if (config.isSN) { columnMapping.push(-2); return; }
                 if (config.isSource) { columnMapping.push(-3); return; }
-                const idx = sheetHeaders.findIndex(h => h.trim().includes(config.original.substring(0, 10)));
+                
+                // 強化比對：試算表標題可能包含空格，使用 trim 並檢查是否包含
+                const idx = sheetHeaders.findIndex(h => {
+                    const header = h ? h.toString().trim() : "";
+                    return header === config.original || header.includes(config.original) || config.original.includes(header);
+                });
                 columnMapping.push(idx);
             });
         }
@@ -469,7 +474,6 @@
             }).join('');
         }
 
-        // 優化：數字僅加粗，不再標色
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
@@ -553,21 +557,27 @@
                         let rawValue = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         let displayValue = rawValue;
 
+                        // 核心修正：核准出差邏輯
                         if (config.isApproval) {
-                            td.classList.add('approval-cell');
-                            const v = rawValue.trim();
-                            if (v === "是") displayValue = "Y";
-                            else if (v === "否") displayValue = "N";
-                            else displayValue = "";
+                            const v = rawValue.toString().trim();
+                            if (v === "是") {
+                                displayValue = "Y";
+                                td.classList.add('approval-y'); // 僅 y 標粉紅底並置中
+                            } else if (v === "否") {
+                                displayValue = "N";
+                                td.classList.add('text-center'); // n 僅置中
+                            } else {
+                                displayValue = "";
+                            }
                         }
 
-                        // 更新換行規則：排除「+」號與「*」號後面的數字
+                        // 自動換行規則
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             displayValue = displayValue.replace(/\n/g, '<br>');
                             displayValue = displayValue.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            // (?<![\*\+]) 負向回瞻：排除前面是 * 或 + 的數字編號
-                            displayValue = displayValue.replace(/(?!^)(?<![\*\+])(\d+[\.\)])/g, '<br>$1');
+                            // 排除「*」或「+」後面的數字
+                            displayValue = displayValue.replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
                             displayValue = displayValue.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 
@@ -575,7 +585,7 @@
                         else if (displayValue.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        const isExactMatch = rawValue.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
+                        const isExactMatch = rawValue.toString().trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
                         let html = displayValue;
 
                         if (!isExactMatch) {

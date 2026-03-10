@@ -76,30 +76,37 @@
             z-index: 9999;
             background-color: rgba(37, 99, 235, 0.95);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.8rem 1.6rem;
             border-radius: 9999px;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 800;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5);
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            cursor: pointer; /* 設為可點擊 */
+            cursor: pointer;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(20px);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: auto; /* 啟用點擊事件 */
+            pointer-events: none; /* 隱藏時不可點擊 */
             user-select: none;
+            backdrop-filter: blur(4px);
         }
 
         .scroll-hint-btn:hover {
             background-color: rgba(29, 78, 216, 1);
             transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.6);
+        }
+
+        .scroll-hint-btn:active {
+            transform: translateY(0) scale(0.95);
         }
 
         .scroll-hint-btn.show {
             opacity: 1;
             transform: translateY(0);
+            pointer-events: auto; /* 顯示時可點擊 */
         }
 
         #scroll-hint-right {
@@ -223,14 +230,14 @@
         </div>
     </div>
 
-    <!-- 右下角固定提示詞 (向右) -->
+    <!-- 右下角滑動提示按鈕 (向右) -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
-        向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </div>
 
-    <!-- 左下角固定提示詞 (向左) -->
+    <!-- 左下角滑動提示按鈕 (向左) -->
     <div id="scroll-hint-left" class="scroll-hint-btn" onclick="scrollTable('left')">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-bounce" style="animation-direction: reverse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> 向左回看前面資料
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" style="animation-direction: reverse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> 向左滑動看前面資料
     </div>
 
     <script>
@@ -497,23 +504,24 @@
                 bodyEl.appendChild(tr);
             });
 
+            // 增加多次偵測，確保 DOM 完整展開後顯示正確
             setTimeout(updateScrollHints, 100);
-            setTimeout(updateScrollHints, 500); 
+            setTimeout(updateScrollHints, 600); 
             tableContainer.onscroll = updateScrollHints;
         }
 
-        // 點擊提示按鈕後執行捲動
+        // 優化後的捲動功能：按比例捲動
         function scrollTable(direction) {
             const container = document.getElementById('table-container');
             if (!container) return;
-            const scrollAmount = container.clientWidth * 0.5; // 每次捲動半個螢幕寬
+            const scrollDist = container.clientWidth * 0.7; // 每次滑動 70% 的寬度
             container.scrollBy({
-                left: direction === 'right' ? scrollAmount : -scrollAmount,
+                left: direction === 'right' ? scrollDist : -scrollDist,
                 behavior: 'smooth'
             });
         }
 
-        // 偵測是否顯示左右滑動提示詞
+        // 智慧偵測：左右按鈕提示詞邏輯
         function updateScrollHints() {
             const container = document.getElementById('table-container');
             const hintRight = document.getElementById('scroll-hint-right');
@@ -522,26 +530,28 @@
 
             if (!container || !hintRight || !hintLeft || !queryView) return;
 
-            // 1. 如果不在查詢頁面，或表格隱藏，全部隱藏
+            // 1. 若還在登入畫面或表格被隱藏，全部強制移除
             if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
                 hintRight.classList.remove('show');
                 hintLeft.classList.remove('show');
                 return;
             }
 
-            // 2. 判斷捲軸狀態
-            const isAtStart = container.scrollLeft <= 10;
-            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 15);
+            // 2. 核心判定：scrollWidth 是否真的大於 clientWidth
             const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
+            
+            // 3. 判定捲軸位置 (容錯值 15px)
+            const isAtStart = container.scrollLeft <= 15;
+            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 25);
 
-            // 右側提示：有溢出 且 還沒到底
+            // 4. 右側按鈕：溢出 且 還沒到最右邊
             if (isOverflowing && !isAtEnd) {
                 hintRight.classList.add('show');
             } else {
                 hintRight.classList.remove('show');
             }
 
-            // 左側提示：有溢出 且 已經離開起始點
+            // 5. 左側按鈕：溢出 且 已經離開最左邊
             if (isOverflowing && !isAtStart) {
                 hintLeft.classList.add('show');
             } else {

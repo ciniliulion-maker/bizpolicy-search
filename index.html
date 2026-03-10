@@ -25,14 +25,25 @@
             line-height: 1.6;
             vertical-align: top;
         }
+
+        /* 核心優化：固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #f8fafc;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            top: 0; /* 固定在容器頂部 */
+            z-index: 40;
+            background-color: #f8fafc; /* 使用實體背景色遮擋下方內容 */
+            box-shadow: inset 0 -1px 0 #e2e8f0, 0 1px 2px rgba(0,0,0,0.05); /* 底線與微陰影 */
             white-space: nowrap;
         }
+
+        /* 確保表格容器有捲動空間 */
+        #table-container {
+            overflow: auto;
+            max-height: 80vh; /* 限制最大高度，讓表頭能在畫面內固定 */
+            background-color: white;
+            border-radius: 1rem;
+        }
+
         /* 數字高亮樣式 (紅色加粗) */
         .highlight-num {
             color: #dc2626; /* Tailwind red-600 */
@@ -47,6 +58,7 @@
         /* 捲軸美化 */
         .custom-scrollbar::-webkit-scrollbar {
             height: 10px;
+            width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f1f1;
@@ -209,8 +221,8 @@
 
             <!-- 表格區域 -->
             <div class="relative">
-                <div id="table-container" class="overflow-x-auto custom-scrollbar bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
-                    <table id="main-table" class="min-w-full divide-y divide-slate-100">
+                <div id="table-container" class="overflow-x-auto custom-scrollbar bg-white shadow-xl border border-slate-100 hidden">
+                    <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
                         <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
                     </table>
@@ -503,9 +515,8 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 資料渲染後偵測捲軸
-            setTimeout(updateScrollHints, 100);
-            setTimeout(updateScrollHints, 600); 
+            // 確保資料渲染後執行滾動提示偵測
+            setTimeout(updateScrollHints, 150);
             tableContainer.onscroll = updateScrollHints;
         }
 

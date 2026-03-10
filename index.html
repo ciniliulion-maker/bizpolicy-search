@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>跨區域差旅政策查詢系統</title>
+    <title>企業差旅政策查詢系統</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google 身份驗證 SDK -->
@@ -57,6 +57,10 @@
         /* 搜尋詞匹配樣式 (藍色加粗) */
         .match-bold {
             color: #2563eb; /* Tailwind blue-600 */
+            font-weight: 800;
+        }
+        /* 幣別高亮樣式 (純加粗) */
+        .currency-bold {
             font-weight: 800;
         }
         
@@ -142,7 +146,7 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <!-- 標題區 -->
         <header class="mb-10 text-center">
-            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">跨區域企業差旅政策查詢</h1>
+            <h1 class="text-3xl font-extrabold text-slate-800 mb-2">企業差旅政策查詢</h1>
             <p id="sub-title" class="text-slate-500 font-medium italic">已整合：台北、桃園、新竹、台中、台南、高雄全區資料</p>
         </header>
 
@@ -261,7 +265,6 @@
         const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
         
-        // 明確定義要搜尋的六個分頁名稱
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', 
             '行政-合約管理(桃園)', 
@@ -357,7 +360,6 @@
             loadingEl.classList.remove('hidden');
 
             try {
-                // 使用 batchGet 一次抓取六個分頁
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${rangesParam}`;
                 
@@ -374,18 +376,13 @@
                 if (data.valueRanges && data.valueRanges.length > 0) {
                     data.valueRanges.forEach((vr, index) => {
                         const sheetFullName = TARGET_SHEETS[index];
-                        // 提取括號內的文字作為簡短區域標註 (例如：台北)
                         const regionLabel = sheetFullName.match(/\((.*?)\)/)?.[1] || sheetFullName;
                         const rows = vr.values;
                         
                         if (rows && rows.length > 0) {
                             if (index === 0) firstSheetHeaders = rows[0]; 
-                            
-                            // 合併內容列，並打上區域標籤
                             rows.slice(1).forEach(row => {
-                                // 判斷是否為有效列 (至少要有一些內容)
                                 if (row.length === 0 || row.every(c => !c || c.trim() === "")) return;
-                                
                                 const rowWithMeta = [...row];
                                 rowWithMeta.__sheetSource = regionLabel;
                                 allMergedData.push(rowWithMeta);
@@ -397,7 +394,6 @@
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                     
-                    // 如果有上次搜尋過的詞，立即搜尋
                     if (document.getElementById('searchInput').value.trim() !== "") {
                         performSearch(true);
                     }
@@ -453,6 +449,13 @@
                 if (idx > 1) columnVisibility[idx] = isVisible; 
             });
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
+        }
+
+        // 幣別高亮邏輯：加粗 USD, TWD, HKD 等代碼
+        function highlightCurrencies(text) {
+            if (!text) return "";
+            const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
+            return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
         function highlightNumbers(text) {
@@ -513,22 +516,31 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 處理換行與項目符號邏輯
+                        if (cellContent.includes("職稱") || cellContent.includes("職級")) {
+                            td.classList.add('bg-red-50');
+                        }
+
                         if (["機票差旅政策", "酒店差旅政策", "報價策略"].includes(config.display)) {
-                            // 1. 處理原始資料中的換行符號
                             cellContent = cellContent.replace(/\n/g, '<br>');
-                            // 2. 在項目符號前加入換行 (?!^ 排除字串開頭，避免首行多一個空行)
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            // 3. 在數字編號前加入換行 (例如 1. 2. )
                             cellContent = cellContent.replace(/(?!^)(\d+\.)/g, '<br>$1');
                         }
 
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
+                        // 處理搜尋標藍
                         let html = boldMatches(cellContent, lastSearchTerm);
+                        
+                        // 處理幣別標粗
+                        html = highlightCurrencies(html);
+
                         const targetFields = ["機票差旅政策", "酒店差旅政策", "報價策略"];
-                        if (targetFields.includes(config.display)) html = highlightNumbers(html);
+                        if (targetFields.includes(config.display)) {
+                            // 處理數字標紅
+                            html = highlightNumbers(html);
+                        }
+                        
                         td.innerHTML = html;
                     }
                     tr.appendChild(td);
@@ -554,7 +566,6 @@
             const queryView = document.getElementById('query-view');
 
             if (!container || !hintRight || !hintLeft || !queryView) return;
-
             if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
                 hintRight.classList.remove('show');
                 hintLeft.classList.remove('show');
@@ -587,11 +598,7 @@
             const tableContainer = document.getElementById('table-container');
             const loadingEl = document.getElementById('loading');
 
-            if (allMergedData.length === 0) { 
-                fetchSheetData(); 
-                return; 
-            }
-            
+            if (allMergedData.length === 0) { fetchSheetData(); return; }
             if (term === "") { 
                 tableContainer.classList.add('hidden'); 
                 noResultsEl.classList.add('hidden'); 
@@ -606,12 +613,10 @@
             }
 
             const searchAction = () => {
-                // 核心：過濾合併後的所有資料列
                 currentRows = allMergedData.filter(row => {
                     return row.some(cell => {
                         const cellStr = String(cell).toLowerCase();
                         if (cellStr.includes(term)) return true;
-                        // 支援日期格式搜尋
                         if (term.includes('/') && term.length >= 3) {
                             const parts = term.split('/');
                             const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);

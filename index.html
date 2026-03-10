@@ -66,13 +66,10 @@
             font-weight: 700;
         }
         
-        /* 搜尋詞匹配樣式 (專業藍) */
+        /* 優化：搜尋詞匹配樣式 (改為僅加粗，不標藍色字與底色) */
         .match-bold {
-            color: #2563eb; 
-            background-color: #dbeafe;
-            padding: 0 2px;
-            border-radius: 2px;
-            font-weight: 700;
+            font-weight: 800;
+            color: inherit;
         }
         
         /* 幣別高亮樣式 */
@@ -113,7 +110,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 10px;
-            border: 2px solid #f1f1f5f9;
+            border: 2px solid #f1f5f9;
         }
         
         /* 專用窄欄位樣式 */
@@ -229,7 +226,7 @@
                         class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md">
                         查詢
                     </button>
-                    <button onclick="signOut()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500">登出</button>
+                    <button onclick="signOut()" class="px-4 py-2 text-sm font-bold text-slate-400 hover:text-red-500">登出</button>
                 </div>
             </div>
 
@@ -484,8 +481,13 @@
         // 智能判斷職稱標示邏輯：深藍色系高亮
         function highlightJobKeywords(text) {
             if (!text) return "";
-            // 包含常見的具體管理職務名稱，排除標籤性質文字
-            return text.replace(/(董事長|總經理|執行長|營運長|財務長|技術長|副總|協理|總監|經理|襄理|副理|主任|組長)/g, '<span class="job-keyword">$1</span>');
+            
+            // 保護 HTML 標籤，避免替換 class 名稱中的內容
+            const parts = text.split(/(<[^>]+>)/g);
+            return parts.map(part => {
+                if (part && part.startsWith('<')) return part;
+                return part.replace(/(董事長|總經理|執行長|營運長|財務長|技術長|副總|協理|總監|經理|襄理|副理|主任|組長)/g, '<span class="job-keyword">$1</span>');
+            }).join('');
         }
 
         function highlightNumbers(text) {
@@ -506,15 +508,18 @@
             }).join('');
         }
 
-        // 搜尋結果如果跟搜尋字詞相同內容，字詞不標藍字也不加粗
+        // 優化：搜尋結果中不再標示藍色與背景，僅加粗以供識別
         function boldMatches(text, term) {
             if (!text || !term) return text;
-            // 檢查是否完全相同 (不計大小寫與前後空白)
-            if (text.trim().toLowerCase() === term.trim().toLowerCase()) {
-                return text;
-            }
+            
+            // 保護 HTML 標籤，避免替換 class 名稱中的內容
+            const parts = text.split(/(<[^>]+>)/g);
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            return text.replace(regex, '<b class="match-bold">$1</b>');
+            
+            return parts.map(part => {
+                if (part && part.startsWith('<')) return part;
+                return part.replace(regex, '<b class="match-bold">$1</b>');
+            }).join('');
         }
 
         function renderTable(dataRows) {
@@ -570,7 +575,6 @@
                         let rawCellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         let cellContent = rawCellContent;
                         
-                        // 先執行換行邏輯 (不影響匹配檢查)
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
@@ -582,7 +586,7 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 智慧判斷：若搜尋結果與關鍵字完全相同，則不標示高亮
+                        // 智慧判斷：若搜尋結果與關鍵字完全相同，則不標示加粗
                         const isExactMatch = rawCellContent.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
                         let html = cellContent;
 

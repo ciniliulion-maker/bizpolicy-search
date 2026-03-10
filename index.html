@@ -41,6 +41,8 @@
             background-color: #f8fafc; 
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
+            /* 欄位標題字體大小設定為 10pt */
+            font-size: 10pt !important;
         }
 
         /* 表格容器 */
@@ -79,9 +81,12 @@
             color: #1e293b;
         }
         
-        /* 職務關鍵字高亮 (深藍色粗體) */
+        /* 職務關鍵字高亮：藍色系高亮（深藍文字 + 淡藍底色） */
         .job-keyword {
             color: #1e3a8a; 
+            background-color: #eff6ff;
+            padding: 0 2px;
+            border-radius: 3px;
             font-weight: 800;
         }
 
@@ -125,13 +130,14 @@
             bottom: 2rem;
             right: 2rem; 
             z-index: 9999;
-            background-color: rgba(30, 41, 59, 0.9);
+            /* 更多資訊、返回前面 請用藍色底色 */
+            background-color: #2563eb;
             color: white;
             padding: 0.75rem 1.25rem;
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 600;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -214,7 +220,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <!-- 搜尋框改為灰色 -->
                         <input type="text" id="searchInput" 
                             placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
                             class="w-full pl-12 pr-4 py-4 bg-slate-100 rounded-xl border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-slate-500 text-slate-800 font-bold"
@@ -222,7 +227,7 @@
                     </div>
                     <button id="searchBtn" onclick="performSearch()" 
                         class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md">
-                        執行查詢
+                        查詢
                     </button>
                     <button onclick="signOut()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500">登出</button>
                 </div>
@@ -251,7 +256,7 @@
                 <button onclick="fetchSheetData()" class="px-10 py-3 bg-slate-800 text-white rounded-xl font-bold">重新整理</button>
             </div>
 
-            <!-- 筆數提示：增加視覺邊界 -->
+            <!-- 筆數提示 -->
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
 
             <!-- 表格區域 -->
@@ -451,7 +456,7 @@
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 優化：字級改為 12pt
+                // 字級改為 12pt
                 span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;
@@ -476,10 +481,11 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
+        // 智能判斷職稱標示邏輯：深藍色系高亮（移除標籤性質關鍵字）
         function highlightJobKeywords(text) {
             if (!text) return "";
-            // 智能判斷：僅針對具體職務名稱深藍高亮
-            return text.replace(/(董事長|總經理|副總|營運長|總監|執行長)/g, '<span class="job-keyword">$1</span>');
+            // 包含常見的具體管理職務名稱
+            return text.replace(/(董事長|總經理|執行長|營運長|財務長|技術長|副總|協理|總監|經理|襄理|副理|主任|組長)/g, '<span class="job-keyword">$1</span>');
         }
 
         function highlightNumbers(text) {
@@ -500,8 +506,12 @@
             }).join('');
         }
 
+        // 搜尋結果如果跟搜尋字詞相同內容，字詞不標藍字
         function boldMatches(text, term) {
             if (!text || !term) return text;
+            if (text.trim().toLowerCase() === term.trim().toLowerCase()) {
+                return text;
+            }
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             return text.replace(regex, '<b class="match-bold">$1</b>');
         }
@@ -534,7 +544,8 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                // 字體大小設定為 10pt
+                th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if(config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
                 headerRow.appendChild(th);

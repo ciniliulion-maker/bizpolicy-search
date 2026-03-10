@@ -66,6 +66,14 @@
             font-weight: 800;
         }
         
+        /* 職稱/職級關鍵字高亮 (文字淡粉紅底) */
+        .job-keyword {
+            background-color: #ffe4e6; /* rose-100 */
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            border-radius: 0.25rem;
+        }
+
         /* 捲軸美化 */
         .custom-scrollbar::-webkit-scrollbar {
             height: 10px;
@@ -252,7 +260,7 @@
                     </svg>
                 </div>
                 <h3 class="text-xl font-bold text-slate-400">跨區域搜尋：查無符合條件的資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤，或是您目前對某些分頁無檢視權限。</p>
+                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
             </div>
         </div>
     </div>
@@ -456,28 +464,28 @@
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
-        // 幣別高亮邏輯：加粗 USD, TWD 等代碼
+        // 幣別高亮邏輯：加粗常用幣別代碼
         function highlightCurrencies(text) {
             if (!text) return "";
             const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 關鍵字標示邏輯：針對文字本身加上淡粉紅底 (優化關鍵字清單)
+        // 職級標示邏輯：僅針對文字本身加上淡粉紅底
         function highlightJobKeywords(text) {
             if (!text) return "";
-            return text.replace(/(職級|職稱|董事長|總經理|副總)/g, '<span class="bg-rose-100 px-1 rounded">$1</span>');
+            return text.replace(/(職級|職稱|董事長|總經理|副總)/g, '<span class="job-keyword">$1</span>');
         }
 
-        // 優化：數字高亮邏輯 (排除項目編號如 1. 2.)
+        // 數字高亮邏輯：排除項目編號 (如 1. 2. 或 一、 二、)
         function highlightNumbers(text) {
             if (!text) return "";
-            // 使用正則表達式分組：
-            // 第一組 (\d+\.) 匹配項目編號，直接回傳不標紅
-            // 第二組 (\d+) 匹配一般數字
-            // 第三組 ([一二三四五六七八九十百千萬零]+) 匹配中文字數字
-            return text.replace(/(\d+\.)|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3) => {
-                if (p1) return p1; // 如果是項目編號，保持原樣
+            // 第一組 (\d+[\.\)])|(\(\d+\)) 匹配阿拉伯數字項目編號，不標色
+            // 第二組 ([一二三四五六七八九十]+[、\.]) 匹配中文項目編號，不標色
+            // 第三組 (\d+) 匹配一般數字，標紅色
+            // 第四組 ([一二三四五六七八九十百千萬零]+) 匹配中文數字，標紅色
+            return text.replace(/(\d+[\.\)])|(\(\d+\))|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3, p4, p5) => {
+                if (p1 || p2 || p3) return match; // 項目編號維持原樣
                 return `<span class="highlight-num">${match}</span>`;
             });
         }
@@ -507,7 +515,6 @@
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
             
-            // 更新並顯示搜尋筆數
             if (countEl) {
                 countEl.innerText = `共 ${dataRows.length} 筆搜尋結果`;
                 countEl.classList.remove('hidden');
@@ -543,24 +550,23 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 處理換行與項目符號邏輯 (包含開票改票流程規範)
-                        const autoFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範"];
-                        if (autoFields.includes(config.display)) {
+                        // 處理自動換行與高亮
+                        const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範"];
+                        if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            cellContent = cellContent.replace(/(?!^)(\d+\.)/g, '<br>$1');
+                            cellContent = cellContent.replace(/(?!^)(\d+[\.\)])/g, '<br>$1');
+                            cellContent = cellContent.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 處理標註與高亮
                         let html = boldMatches(cellContent, lastSearchTerm);
                         html = highlightCurrencies(html);
-                        html = highlightJobKeywords(html); // 標示職級/職務關鍵字底色
+                        html = highlightJobKeywords(html); 
                         
-                        // 處理數字紅字 (避開項目符號數字)
-                        if (autoFields.includes(config.display)) {
+                        if (autoWrapFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }
                         

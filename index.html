@@ -29,7 +29,7 @@
             max-width: 550px;
             white-space: normal !important;
             word-break: break-all;
-            line-height: 1.7; /* 增加行高提升可讀性 */
+            line-height: 1.7;
             vertical-align: top;
         }
 
@@ -39,7 +39,7 @@
             top: 0; 
             z-index: 40;
             background-color: #ffffff; 
-            box-shadow: inset 0 -2px 0 #f1f5f9; /* 加強底線感 */
+            box-shadow: inset 0 -2px 0 #f1f5f9;
             white-space: nowrap;
         }
 
@@ -66,7 +66,7 @@
         /* 搜尋詞匹配樣式 (專業藍) */
         .match-bold {
             color: #2563eb; 
-            background-color: #eff6ff; /* 加上超淡藍底色背景 */
+            background-color: #eff6ff;
             padding: 0 2px;
             border-radius: 2px;
             font-weight: 700;
@@ -75,7 +75,7 @@
         /* 幣別高亮樣式 */
         .currency-bold {
             font-weight: 700;
-            color: #334155; /* slate-700 */
+            color: #334155;
         }
         
         /* 職務關鍵字高亮 (質感深藍) */
@@ -128,6 +128,7 @@
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
+            right: 2rem; /* 確保在右側 */
             z-index: 9999;
             background-color: #1e293b;
             color: white;
@@ -151,6 +152,38 @@
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
+        }
+
+        /* Google 標準白色按鈕樣式 */
+        .google-auth-btn {
+            background-color: #ffffff;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-family: 'Roboto', 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+
+        .google-auth-btn:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .google-auth-btn:active {
+            background-color: #eeeeee;
+        }
+
+        .google-auth-btn img {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
         }
     </style>
 </head>
@@ -179,8 +212,9 @@
                 為了資訊安全，請使用具備「試算表讀取權限」的 Google 帳號登入系統。
             </p>
             
-            <button id="auth-btn" onclick="handleAuthClick()" class="flex items-center px-10 py-4 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-800 transition-all duration-300 font-bold group disabled:opacity-50">
-                <img id="g-logo" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-5 h-5 mr-4" alt="Google">
+            <!-- 使用白色官方樣式按鈕 -->
+            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group disabled:opacity-50">
+                <img id="g-logo" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google">
                 <span>使用 Google 帳號登入</span>
             </button>
             <div id="auth-error" class="mt-8 text-red-500 font-medium hidden text-center px-6 bg-red-50 py-3 rounded-xl border border-red-100 text-xs"></div>
@@ -260,11 +294,11 @@
         </div>
     </div>
 
-    <!-- 左右導航提示 -->
+    <!-- 左右導航提示 (確保在右側) -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce-x" style="animation: bounce-x 1s infinite;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
-    <div id="scroll-hint-left" class="scroll-hint-btn" style="left: 2rem;" onclick="scrollTable('left')">
+    <div id="scroll-hint-left" class="scroll-hint-btn" style="left: 2rem; right: auto;" onclick="scrollTable('left')">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg> 返回前面
     </div>
 
@@ -436,7 +470,9 @@
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                span.className = "ml-2.5 text-xs text-slate-500 group-hover:text-blue-600 font-bold transition-colors";
+                // 優化：將核選欄位名稱改為 12pt
+                span.className = "ml-2.5 text-slate-500 group-hover:text-blue-600 font-bold transition-colors";
+                span.style.fontSize = "12pt";
                 span.textContent = config.display;
                 label.appendChild(checkbox);
                 label.appendChild(span);

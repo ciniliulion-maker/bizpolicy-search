@@ -184,7 +184,6 @@
                     </h3>
                     <div class="flex gap-4 text-xs">
                         <button onclick="toggleAllColumns(true)" class="text-blue-600 hover:underline font-bold">全選</button>
-                        <button onclick="toggleAllColumns(false)" class="text-slate-400 hover:underline font-bold">全不選</button>
                     </div>
                 </div>
                 <div id="column-filters" class="flex flex-wrap gap-x-6 gap-y-3">
@@ -504,7 +503,6 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 增加多次偵測，確保 DOM 完整展開後顯示正確
             setTimeout(updateScrollHints, 100);
             setTimeout(updateScrollHints, 600); 
             tableContainer.onscroll = updateScrollHints;

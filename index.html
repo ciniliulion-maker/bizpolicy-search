@@ -472,16 +472,39 @@
         // 職級標示邏輯：深藍色粗體
         function highlightJobKeywords(text) {
             if (!text) return "";
-            return text.replace(/(職級|職稱|董事長|總經理|副總)/g, '<span class="job-keyword">$1</span>');
+            // 包含常見職級關鍵字
+            return text.replace(/(職級|職稱|董事長|總經理|副總|營運長|總監|執行長)/g, '<span class="job-keyword">$1</span>');
         }
 
-        // 數字高亮邏輯：排除項目編號 (如 1. 2. 或 一、 二、)
+        // 優化後的數字高亮邏輯：排除純編號，保留公式與金額數值
         function highlightNumbers(text) {
             if (!text) return "";
-            return text.replace(/(\d+[\.\)])|(\(\d+\))|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3, p4, p5) => {
-                if (p1 || p2 || p3) return match; 
-                return `<span class="highlight-num">${match}</span>`;
-            });
+            
+            // 先拆分標籤，保護已注入的 HTML
+            const parts = text.split(/(<[^>]+>)/g);
+            
+            return parts.map(part => {
+                if (part && part.startsWith('<')) return part;
+                
+                // 邏輯說明：
+                // p1: 匹配編號型數字 (1. 或 2) ) -> 判斷大小，大於 99 的(如 600.) 視為數值標紅，小的視為編號保留
+                // p2: 匹配中文項目編號 (一、)
+                // p3: 匹配一般數字
+                // p4: 匹配中文數字
+                return part.replace(/(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3, p4) => {
+                    if (p1) {
+                        const val = parseInt(p1);
+                        // 如果數字大於等於 100，通常是金額或報價公式的一部分，應標紅
+                        if (val >= 100) return `<span class="highlight-num">${match}</span>`;
+                        // 小於 100 且結尾是點/括號，視為列表編號，不標紅
+                        return match; 
+                    }
+                    if (p2) return match; // 中文項目編號不標紅
+                    
+                    // 其他純數字標紅
+                    return `<span class="highlight-num">${match}</span>`;
+                });
+            }).join('');
         }
 
         function boldMatches(text, term) {
@@ -544,7 +567,7 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 優化：處理特定政策與「注意事項」欄位的換行與高亮
+                        // 定義需執行換行與數字高亮的政策欄位
                         const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
@@ -556,12 +579,12 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 文字高亮處理
+                        // 依序注入高亮 HTML
                         let html = boldMatches(cellContent, lastSearchTerm); 
                         html = highlightCurrencies(html); 
                         html = highlightJobKeywords(html); 
                         
-                        // 數據高亮 (避開項目符號)
+                        // 處理數值高亮 (針對特定政策欄位)
                         if (autoWrapFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }

@@ -469,30 +469,38 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 職級標示邏輯：深藍色粗體 (移除標籤性質關鍵字)
+        // 職級標示邏輯：具體職稱深藍色粗體
         function highlightJobKeywords(text) {
             if (!text) return "";
-            // 僅保留具體職務名稱的高亮，移除「職級、職稱」
             return text.replace(/(董事長|總經理|副總|營運長|總監|執行長)/g, '<span class="job-keyword">$1</span>');
         }
 
-        // 數字高亮邏輯：排除純編號，保留公式與金額數值
+        // 優化後的數字高亮邏輯：排除純編號，公式(*開頭)標紅
         function highlightNumbers(text) {
             if (!text) return "";
             
-            // 先拆分標籤，保護已注入的 HTML
+            // 先拆分標籤，保護已注入的 HTML 屬性 (避免修改到 class="highlight-num" 內的數字)
             const parts = text.split(/(<[^>]+>)/g);
             
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
                 
-                return part.replace(/(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3, p4) => {
-                    if (p1) {
-                        const val = parseInt(p1);
-                        if (val >= 100) return `<span class="highlight-num">${match}</span>`;
-                        return match; 
+                // pStar: * 開頭的公式數值 (*600)
+                // p1: 一般編號 (1. 或 2) ) -> 大於等於 100 視為數據
+                // p2: 中文項目編號 (一、)
+                // p3: 一般數字
+                // p4: 中文數字
+                return part.replace(/(\*\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pStar, p1, p2, p3, p4) => {
+                    if (pStar) {
+                        // 公式型數字，標紅色粗體
+                        return `<span class="highlight-num">${match}</span>`;
                     }
-                    if (p2) return match; 
+                    if (p1) {
+                        const val = parseInt(p1.replace(/[^\d]/g, ''));
+                        if (val >= 100) return `<span class="highlight-num">${match}</span>`;
+                        return match; // 小於 100 的項目符號數字不標紅
+                    }
+                    if (p2) return match; // 中文編號不標紅
                     
                     return `<span class="highlight-num">${match}</span>`;
                 });
@@ -559,11 +567,15 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
+                        // 處理自動換行邏輯
                         const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            cellContent = cellContent.replace(/(?!^)(\d+[\.\)])/g, '<br>$1');
+                            
+                            // 優化換行：排除公式型數字 (*1.)，僅對純編號換行 (使用負向回瞻確保前方沒有 *)
+                            // 註：JavaScript 支援負向回瞻 (?<!...) 於現代瀏覽器
+                            cellContent = cellContent.replace(/(?!^)(?<!\*)(\d+[\.\)])/g, '<br>$1');
                             cellContent = cellContent.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 

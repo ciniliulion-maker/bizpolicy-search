@@ -72,21 +72,28 @@
         /* 右下角固定提示詞樣式 */
         #scroll-hint {
             position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            z-index: 50;
-            background-color: rgba(37, 99, 235, 0.9);
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999; /* 確保在最上層 */
+            background-color: rgba(37, 99, 235, 0.95);
             color: white;
-            padding: 0.6rem 1.2rem;
+            padding: 0.75rem 1.5rem;
             border-radius: 9999px;
             font-size: 0.875rem;
-            font-weight: 700;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            font-weight: 800;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #scroll-hint.show {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -183,7 +190,7 @@
             <!-- 表格區域 -->
             <div class="relative">
                 <div id="table-container" class="overflow-x-auto custom-scrollbar bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
-                    <table class="min-w-full divide-y divide-slate-100">
+                    <table id="main-table" class="min-w-full divide-y divide-slate-100">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
                         <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
                     </table>
@@ -203,8 +210,8 @@
     </div>
 
     <!-- 右下角固定提示詞 -->
-    <div id="scroll-hint" class="hidden">
-        向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+    <div id="scroll-hint">
+        向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </div>
 
     <script>
@@ -471,12 +478,13 @@
                 bodyEl.appendChild(tr);
             });
 
-            // 渲染後偵測捲軸狀態
+            // 修正：增加兩次偵測，確保 DOM 完全渲染後的數值正確
             setTimeout(updateScrollHint, 100);
+            setTimeout(updateScrollHint, 500); 
             tableContainer.onscroll = updateScrollHint;
         }
 
-        // 偵測是否顯示「向右滑動」提示詞
+        // 偵測是否顯示「向右滑動」提示詞 (核心修正邏輯)
         function updateScrollHint() {
             const container = document.getElementById('table-container');
             const hint = document.getElementById('scroll-hint');
@@ -484,20 +492,23 @@
 
             if (!container || !hint || !queryView) return;
 
-            // 如果目前隱藏中，直接不顯示
+            // 1. 如果不在查詢頁面，或表格隱藏，絕對不顯示
             if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
-                hint.classList.add('hidden');
+                hint.classList.remove('show');
                 return;
             }
 
-            // 判斷寬度是否超出 (scrollWidth > clientWidth) 且 使用者還沒滑動到最右端
-            const isOverflowing = container.scrollWidth > container.clientWidth;
-            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 10);
+            // 2. 核心判定：scrollWidth 是否真的大於 clientWidth (考慮 5px 誤差)
+            const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
+            
+            // 3. 判定是否已經滑動到底部 (考慮 15px 誤差)
+            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 15);
 
+            // 4. 只有當溢出 且 還沒到最右邊時，才顯示
             if (isOverflowing && !isAtEnd) {
-                hint.classList.remove('hidden');
+                hint.classList.add('show');
             } else {
-                hint.classList.add('hidden');
+                hint.classList.remove('show');
             }
         }
 

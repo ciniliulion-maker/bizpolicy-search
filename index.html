@@ -113,7 +113,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 10px;
-            border: 2px solid #f1f5f9;
+            border: 2px solid #f1f1f5f9;
         }
         
         /* 專用窄欄位樣式 */
@@ -137,7 +137,7 @@
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 600;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.4);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -169,7 +169,7 @@
             align-items: center;
             cursor: pointer;
             transition: background-color 0.2s;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
         .google-auth-btn:hover {
@@ -481,10 +481,10 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 智能判斷職稱標示邏輯：深藍色系高亮（移除標籤性質關鍵字）
+        // 智能判斷職稱標示邏輯：深藍色系高亮
         function highlightJobKeywords(text) {
             if (!text) return "";
-            // 包含常見的具體管理職務名稱
+            // 包含常見的具體管理職務名稱，排除標籤性質文字
             return text.replace(/(董事長|總經理|執行長|營運長|財務長|技術長|副總|協理|總監|經理|襄理|副理|主任|組長)/g, '<span class="job-keyword">$1</span>');
         }
 
@@ -506,9 +506,10 @@
             }).join('');
         }
 
-        // 搜尋結果如果跟搜尋字詞相同內容，字詞不標藍字
+        // 搜尋結果如果跟搜尋字詞相同內容，字詞不標藍字也不加粗
         function boldMatches(text, term) {
             if (!text || !term) return text;
+            // 檢查是否完全相同 (不計大小寫與前後空白)
             if (text.trim().toLowerCase() === term.trim().toLowerCase()) {
                 return text;
             }
@@ -544,7 +545,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                // 字體大小設定為 10pt
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if(config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
@@ -567,8 +567,10 @@
                         td.innerHTML = `<span class="region-badge">${row.__sheetSource || "總區"}</span>`;
                     } else {
                         const sheetIdx = columnMapping[i];
-                        let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
+                        let rawCellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
+                        let cellContent = rawCellContent;
                         
+                        // 先執行換行邏輯 (不影響匹配檢查)
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
@@ -580,12 +582,18 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        let html = boldMatches(cellContent, lastSearchTerm); 
-                        html = highlightCurrencies(html); 
-                        html = highlightJobKeywords(html); 
-                        
-                        if (autoWrapFields.includes(config.display)) {
-                            html = highlightNumbers(html);
+                        // 智慧判斷：若搜尋結果與關鍵字完全相同，則不標示高亮
+                        const isExactMatch = rawCellContent.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
+                        let html = cellContent;
+
+                        if (!isExactMatch) {
+                            html = boldMatches(html, lastSearchTerm); 
+                            html = highlightCurrencies(html); 
+                            html = highlightJobKeywords(html); 
+                            
+                            if (autoWrapFields.includes(config.display)) {
+                                html = highlightNumbers(html);
+                            }
                         }
                         
                         td.innerHTML = html;

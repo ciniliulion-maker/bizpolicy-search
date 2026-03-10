@@ -24,7 +24,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* 預設長內容欄位樣式 */
         .content-cell {
             min-width: 280px;
             max-width: 550px;
@@ -38,6 +37,7 @@
         .w-6-char {
             width: 6em;
             min-width: 6em;
+            max-width: 6em;
             white-space: normal !important;
         }
         .w-10-char {
@@ -89,7 +89,7 @@
             font-weight: 700;
         }
         
-        /* 搜尋詞匹配樣式 (僅加粗) */
+        /* 搜尋詞匹配樣式 (僅加粗，不標藍色與背景) */
         .match-bold {
             font-weight: 800;
             color: inherit;
@@ -151,6 +151,7 @@
             bottom: 2rem;
             right: 2rem; 
             z-index: 9999;
+            /* 更多資訊、返回前面 請用藍色底色 */
             background-color: #2563eb;
             color: white;
             padding: 0.75rem 1.25rem;
@@ -175,13 +176,13 @@
             pointer-events: auto;
         }
 
-        /* Google 標準白色按鈕樣式 - 優化為圓弧造型 */
+        /* Google 標準白色按鈕樣式 - 圓弧造型 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
             border: 1px solid #dadce0;
             padding: 0.75rem 2rem;
-            border-radius: 9999px; /* 完全圓弧樣式 */
+            border-radius: 9999px; 
             font-family: 'Roboto', 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 500;
@@ -194,12 +195,6 @@
 
         .google-auth-btn:hover {
             background-color: #f8f9fa;
-            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.30), 0 4px 8px 3px rgba(60,64,67,0.15);
-        }
-
-        .google-auth-btn:active {
-            background-color: #eeeeee;
-            transform: scale(0.98);
         }
 
         .google-auth-btn img {
@@ -520,7 +515,6 @@
 
         function highlightNumbers(text) {
             if (!text) return "";
-            // 保護標籤
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
@@ -590,7 +584,8 @@
 
             dataRows.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-100/50 transition-colors duration-150 align-top";
+                // 優化：將懸停底色改為更明顯的 blue-50
+                tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
@@ -628,9 +623,13 @@
                         let html = cellContent;
 
                         if (!isExactMatch) {
+                            // 先處理搜尋詞標註 (match-bold)
                             html = boldMatches(html, lastSearchTerm); 
+                            // 處理職稱相關藍色高亮 (job-keyword)
                             html = highlightJobKeywords(html); 
+                            // 處理幣別加粗
                             html = highlightCurrencies(html); 
+                            // 處理數字紅色高亮
                             if (autoWrapFields.includes(config.display)) {
                                 html = highlightNumbers(html);
                             }

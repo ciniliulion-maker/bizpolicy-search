@@ -38,8 +38,8 @@
             position: sticky;
             top: 0; 
             z-index: 40;
-            background-color: #ffffff; 
-            box-shadow: inset 0 -2px 0 #f1f5f9;
+            background-color: #f8fafc; 
+            box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
         }
 
@@ -48,8 +48,9 @@
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         /* 搜尋結果字級：12pt */
@@ -66,7 +67,7 @@
         /* 搜尋詞匹配樣式 (專業藍) */
         .match-bold {
             color: #2563eb; 
-            background-color: #eff6ff;
+            background-color: #dbeafe;
             padding: 0 2px;
             border-radius: 2px;
             font-weight: 700;
@@ -75,28 +76,25 @@
         /* 幣別高亮樣式 */
         .currency-bold {
             font-weight: 700;
-            color: #334155;
+            color: #1e293b;
         }
         
-        /* 職務關鍵字高亮 (質感深藍) */
+        /* 職務關鍵字高亮 (深藍色粗體) */
         .job-keyword {
-            color: #1e1b4b; /* indigo-950 */
+            color: #1e3a8a; 
             font-weight: 800;
-            text-decoration: underline;
-            text-underline-offset: 4px;
-            text-decoration-color: #cbd5e1;
         }
 
-        /* 區域來源標籤 (Badge) */
+        /* 區域來源標籤 */
         .region-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 700;
-            background-color: #e0f2fe;
-            color: #0369a1;
-            border: 1px solid #bae6fd;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
         }
 
         /* 捲軸美化 */
@@ -105,15 +103,12 @@
             width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f8fafc;
+            background: #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 10px;
-            border: 3px solid #f8fafc;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            border: 2px solid #f1f5f9;
         }
         
         /* 專用窄欄位樣式 */
@@ -128,15 +123,15 @@
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
-            right: 2rem; /* 確保在右側 */
+            right: 2rem; 
             z-index: 9999;
-            background-color: #1e293b;
+            background-color: rgba(30, 41, 59, 0.9);
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 600;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -145,7 +140,7 @@
             transform: translateY(10px);
             transition: all 0.3s ease;
             pointer-events: none;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(4px);
         }
 
         .scroll-hint-btn.show {
@@ -167,17 +162,12 @@
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: background-color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
+            transition: background-color 0.2s;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
         .google-auth-btn:hover {
             background-color: #f8f9fa;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 4px 8px 3px rgba(60,64,67,0.15);
-        }
-
-        .google-auth-btn:active {
-            background-color: #eeeeee;
         }
 
         .google-auth-btn img {
@@ -187,116 +177,107 @@
         }
     </style>
 </head>
-<body class="bg-[#fcfdfe] min-h-screen text-slate-800">
+<body class="bg-slate-50 min-h-screen text-slate-800">
 
-    <div id="app" class="max-w-[98%] mx-auto px-4 py-10">
+    <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <!-- 標題區 -->
-        <header class="mb-12 text-center">
-            <h1 class="text-4xl font-black text-slate-900 mb-3 tracking-tight">企業差旅政策查詢</h1>
-            <div class="flex items-center justify-center gap-2">
-                <span class="h-px w-8 bg-slate-200"></span>
-                <p id="sub-title" class="text-slate-400 font-medium text-sm">已整合：台北、桃園、新竹、台中、台南、高雄全區資料</p>
-                <span class="h-px w-8 bg-slate-200"></span>
-            </div>
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢</h1>
+            <p id="sub-title" class="text-slate-400 font-medium text-sm italic">整合全台六大區域分頁即時數據</p>
         </header>
 
         <!-- 登入介面 -->
-        <div id="login-view" class="flex flex-col items-center justify-center py-24 bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 max-w-lg mx-auto">
-            <div class="mb-8 w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-lg mx-auto">
+            <div class="mb-6 w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-slate-900 mb-4">身份認證</h2>
-            <p class="text-slate-500 mb-10 text-center px-10 leading-relaxed text-sm">
-                為了資訊安全，請使用具備「試算表讀取權限」的 Google 帳號登入系統。
-            </p>
+            <h2 class="text-xl font-bold text-slate-900 mb-2">權限驗證</h2>
+            <p class="text-slate-500 mb-8 text-center px-10 text-sm">請使用具備試算表權限的 Google 帳號登入。</p>
             
-            <!-- 使用白色官方樣式按鈕 -->
-            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group disabled:opacity-50">
-                <img id="g-logo" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google">
+            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G">
                 <span>使用 Google 帳號登入</span>
             </button>
-            <div id="auth-error" class="mt-8 text-red-500 font-medium hidden text-center px-6 bg-red-50 py-3 rounded-xl border border-red-100 text-xs"></div>
+            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-6 bg-red-50 py-2 rounded-lg border border-red-100 text-xs"></div>
         </div>
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
-            <!-- 搜尋區 -->
-            <div class="bg-white p-2 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 mb-4">
-                <div class="flex flex-col lg:flex-row items-stretch gap-2">
+            <!-- 搜尋區：強化灰色背景與對比 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
+                <div class="flex flex-col md:flex-row items-stretch gap-3">
                     <div class="flex-1 relative flex items-center">
-                        <span class="absolute left-5 text-slate-400">
+                        <span class="absolute left-4 text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
+                        <!-- 搜尋框改為灰色 -->
                         <input type="text" id="searchInput" 
-                            placeholder="輸入關鍵字：代碼、姓名、企業戶名稱" 
-                            class="w-full pl-14 pr-6 py-5 bg-slate-50/50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-bold"
+                            placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
+                            class="w-full pl-12 pr-4 py-4 bg-slate-100 rounded-xl border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-slate-500 text-slate-800 font-bold"
                             onkeydown="if(event.key === 'Enter') performSearch()">
                     </div>
                     <button id="searchBtn" onclick="performSearch()" 
-                        class="px-10 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200">
-                        查詢
+                        class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md">
+                        執行查詢
                     </button>
-                    <button onclick="signOut()" class="px-6 py-4 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">登出</button>
+                    <button onclick="signOut()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500">登出</button>
                 </div>
             </div>
 
-            <!-- 篩選器 -->
-            <div class="bg-slate-50/50 p-6 rounded-3xl border border-slate-100 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center">
-                        顯示欄位控制
-                    </h3>
-                    <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold hover:underline">顯示全部欄位</button>
+            <!-- 欄位控制區 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
+                    <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">開啟全部</button>
                 </div>
                 <div id="column-filters" class="flex flex-wrap gap-x-6 gap-y-3">
-                    <span class="text-slate-400 text-xs italic">同步資料中...</span>
+                    <span class="text-slate-300 text-xs italic">載入中...</span>
                 </div>
             </div>
 
             <!-- 加載與錯誤 -->
-            <div id="loading" class="flex flex-col items-center justify-center py-32 hidden">
-                <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-100 h-12 w-12 mb-6"></div>
-                <p class="text-slate-400 font-bold tracking-wide">正在同步雲端最新數據...</p>
+            <div id="loading" class="flex flex-col items-center justify-center py-24 hidden">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
+                <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
 
-            <div id="api-error-display" class="hidden max-w-lg mx-auto p-10 bg-white border border-red-100 rounded-[2.5rem] shadow-2xl text-center">
-                <h3 class="text-xl font-bold text-slate-900 mb-2">無法連線至試算表</h3>
-                <p id="api-error-msg" class="text-red-500 text-sm mb-8 font-medium"></p>
-                <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl">重新嘗試連線</button>
+            <div id="api-error-display" class="hidden max-w-lg mx-auto p-10 bg-white border border-red-200 rounded-2xl text-center shadow-lg">
+                <h3 class="text-lg font-bold text-slate-900 mb-2">連線失敗</h3>
+                <p id="api-error-msg" class="text-red-500 text-sm mb-6 font-medium"></p>
+                <button onclick="fetchSheetData()" class="px-10 py-3 bg-slate-800 text-white rounded-xl font-bold">重新整理</button>
             </div>
 
-            <!-- 筆數提示 -->
-            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-white rounded-full text-xs font-black text-slate-500 shadow-sm border border-slate-100 hidden"></div>
+            <!-- 筆數提示：增加視覺邊界 -->
+            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
 
             <!-- 表格區域 -->
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
-                        <tbody id="tableBody" class="text-slate-600 font-medium result-font-size"></tbody>
+                        <tbody id="tableBody" class="text-slate-700 font-medium result-font-size"></tbody>
                     </table>
                 </div>
             </div>
             
-            <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-                <div class="text-slate-200 mb-6 scale-150">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-slate-200 shadow-inner">
+                <div class="text-slate-200 mb-4 scale-125">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <h3 class="text-lg font-bold text-slate-400 uppercase tracking-widest">查無相符資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-sm font-medium">試試看不同的關鍵字</p>
+                <h3 class="text-sm font-bold text-slate-400">查無相符資料</h3>
             </div>
         </div>
     </div>
 
-    <!-- 左右導航提示 (確保在右側) -->
+    <!-- 左右導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
-        更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce-x" style="animation: bounce-x 1s infinite;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+        更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
     <div id="scroll-hint-left" class="scroll-hint-btn" style="left: 2rem; right: auto;" onclick="scrollTable('left')">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg> 返回前面
@@ -316,11 +297,11 @@
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
             { original: "法人代碼", display: "法人代碼" },
-            { original: "企業同行名稱", display: "企業戶名稱" },
+            { original: "企業同行名稱", display: "企業名稱" },
             { original: "主要服務單位", display: "服務單位" },
             { original: "主要服務業務", display: "業務" },
-            { original: "出差是否需經過核准", display: "需核准" },
-            { original: "開票&改票流程及規範說明", display: "開票改票流程" },
+            { original: "出差是否需經過核准", display: "核准出差" },
+            { original: "開票&改票流程及規範說明", display: "開票流程" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策" },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策" },
             { original: "報價策略", display: "報價策略" },
@@ -460,18 +441,18 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (config.isSN || config.isSource) return;
                 const label = document.createElement('label');
-                label.className = "inline-flex items-center cursor-pointer group hover:bg-white px-3 py-1.5 rounded-xl transition-all";
+                label.className = "inline-flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
-                checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-200 rounded-lg focus:ring-blue-500";
+                checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 優化：將核選欄位名稱改為 12pt
-                span.className = "ml-2.5 text-slate-500 group-hover:text-blue-600 font-bold transition-colors";
+                // 優化：字級改為 12pt
+                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;
                 label.appendChild(checkbox);
@@ -497,6 +478,7 @@
 
         function highlightJobKeywords(text) {
             if (!text) return "";
+            // 智能判斷：僅針對具體職務名稱深藍高亮
             return text.replace(/(董事長|總經理|副總|營運長|總監|執行長)/g, '<span class="job-keyword">$1</span>');
         }
 
@@ -544,7 +526,7 @@
             noResultsEl.classList.add('hidden');
             
             if (countEl) {
-                countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg> 共 ${dataRows.length} 筆搜尋結果`;
+                countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${dataRows.length} 筆搜尋結果`;
                 countEl.classList.remove('hidden');
             }
 
@@ -552,7 +534,7 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                th.className = "px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest";
+                th.className = "px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if(config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
                 headerRow.appendChild(th);
@@ -561,14 +543,14 @@
 
             dataRows.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors duration-150 align-top group";
+                tr.className = "hover:bg-slate-100/50 transition-colors duration-150 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
-                    td.className = "px-6 py-6 border-b border-slate-50";
+                    td.className = "px-6 py-5 border-b border-slate-200";
                     
                     if (config.isSN) {
-                        td.className += " sn-cell opacity-50 font-bold group-hover:opacity-100 transition-opacity";
+                        td.className += " sn-cell opacity-60 font-bold";
                         td.textContent = rowIndex + 1;
                     } else if (config.isSource) {
                         td.innerHTML = `<span class="region-badge">${row.__sheetSource || "總區"}</span>`;
@@ -576,7 +558,7 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票改票流程", "注意事項"];
+                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
@@ -626,7 +608,7 @@
                 return;
             }
 
-            const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
+            const isOverflowing = container.scrollWidth > (container.clientWidth + 10);
             const isAtStart = container.scrollLeft <= 20;
             const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 30);
 

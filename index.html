@@ -24,6 +24,7 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* 預設長內容欄位樣式 */
         .content-cell {
             min-width: 280px;
             max-width: 550px;
@@ -43,20 +44,23 @@
         .w-10-char {
             width: 10em;
             min-width: 10em;
+            max-width: 10em;
             white-space: normal !important;
         }
         .w-15-char {
             width: 15em;
             min-width: 15em;
+            max-width: 15em;
             white-space: normal !important;
         }
         .w-25-char {
             width: 25em;
             min-width: 25em;
+            max-width: 25em;
             white-space: normal !important;
         }
 
-        /* 核心優化：固定表頭樣式 */
+        /* 規範：固定表頭與 10pt 字級 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -64,11 +68,9 @@
             background-color: #f8fafc; 
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
-            /* 欄位標題字體大小設定為 10pt */
             font-size: 10pt !important;
         }
 
-        /* 表格容器 */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
@@ -78,28 +80,21 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* 搜尋結果字級：12pt */
+        /* 內容字級 12pt */
         .result-font-size {
             font-size: 12pt !important;
         }
 
         /* 數字高亮樣式 (精緻的玫瑰紅) */
         .highlight-num {
-            color: #e11d48; /* rose-600 */
+            color: #e11d48; 
             font-weight: 700;
         }
         
-        /* 搜尋詞匹配樣式 (僅加粗，不標藍色與背景) */
+        /* 搜尋詞匹配樣式 (僅加粗) */
         .match-bold {
             font-weight: 800;
             color: inherit;
-            background: none !important;
-        }
-        
-        /* 幣別高亮樣式 */
-        .currency-bold {
-            font-weight: 700;
-            color: #1e293b;
         }
         
         /* 職務關鍵字高亮：藍色系高亮（深藍文字 + 淡藍底色） */
@@ -109,6 +104,13 @@
             padding: 0 2px;
             border-radius: 3px;
             font-weight: 800;
+        }
+
+        /* 核准出差專用：粉紅底 */
+        .approval-cell {
+            background-color: #fff1f2; 
+            font-weight: 700;
+            text-align: center;
         }
 
         /* 區域來源標籤 */
@@ -137,7 +139,6 @@
             border: 2px solid #f1f5f9;
         }
         
-        /* 專用窄欄位樣式 */
         .sn-cell {
             width: 60px;
             text-align: center;
@@ -145,13 +146,12 @@
             color: #94a3b8;
         }
 
-        /* 底部滑動提示 */
+        /* 導航提示按鈕：藍色底色 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
             right: 2rem; 
             z-index: 9999;
-            /* 更多資訊、返回前面 請用藍色底色 */
             background-color: #2563eb;
             color: white;
             padding: 0.75rem 1.25rem;
@@ -181,7 +181,7 @@
             background-color: #ffffff;
             color: #3c4043;
             border: 1px solid #dadce0;
-            padding: 0.75rem 2rem;
+            padding: 0.75rem 2.5rem;
             border-radius: 9999px; 
             font-family: 'Roboto', 'Inter', sans-serif;
             font-size: 14px;
@@ -221,9 +221,9 @@
                 </svg>
             </div>
             <h2 class="text-xl font-bold text-slate-900 mb-2">權限驗證</h2>
-            <p class="text-slate-500 mb-8 text-center px-10 text-sm">請使用具備試算表權限的 Google 帳號登入。</p>
+            <p class="text-slate-500 mb-8 text-center px-10 text-sm">請使用具備試算表權限的 Google 帳號登入系統。</p>
             
-            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group disabled:opacity-50">
+            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G">
                 <span>使用 Google 帳號登入</span>
             </button>
@@ -254,13 +254,12 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區 (優化：使用 Grid 確保兩排對齊) -->
+            <!-- 欄位控制區：Grid 網格排版 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
                     <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">開啟全部</button>
                 </div>
-                <!-- 改為 Grid 佈局以確保對齊 -->
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
                     <span class="text-slate-300 text-xs italic">載入中...</span>
                 </div>
@@ -270,12 +269,6 @@
             <div id="loading" class="flex flex-col items-center justify-center py-24 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
-            </div>
-
-            <div id="api-error-display" class="hidden max-w-lg mx-auto p-10 bg-white border border-red-200 rounded-2xl text-center shadow-lg">
-                <h3 class="text-lg font-bold text-slate-900 mb-2">連線失敗</h3>
-                <p id="api-error-msg" class="text-red-500 text-sm mb-6 font-medium"></p>
-                <button onclick="fetchSheetData()" class="px-10 py-3 bg-slate-800 text-white rounded-xl font-bold">重新整理</button>
             </div>
 
             <!-- 筆數提示 -->
@@ -291,13 +284,8 @@
                 </div>
             </div>
             
-            <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-slate-200 shadow-inner">
-                <div class="text-slate-200 mb-4 scale-125">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <h3 class="text-sm font-bold text-slate-400">查無相符資料</h3>
+            <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-slate-200 shadow-inner text-slate-400">
+                <h3 class="text-sm font-bold uppercase tracking-widest">查無相符資料</h3>
             </div>
         </div>
     </div>
@@ -311,10 +299,8 @@
     </div>
 
     <script>
-        /** --- 多分頁核心設定 --- **/
         const CLIENT_ID = '888137251021-14u8ge7mc2di0rji31tm18unta568lou.apps.googleusercontent.com'; 
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
-        
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
@@ -327,7 +313,7 @@
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char" },
             { original: "主要服務單位", display: "服務單位" },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
-            { original: "出差是否需經過核准", display: "核准出差" },
+            { original: "出差是否需經過核准", display: "核准出差", isApproval: true }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-25-char" },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char" },
@@ -354,23 +340,15 @@
                         client_id: CLIENT_ID,
                         scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
                         callback: (response) => {
-                            if (response.error !== undefined) {
-                                showError("授權失敗: " + response.error);
-                                return;
-                            }
+                            if (response.error !== undefined) return;
                             accessToken = response.access_token;
                             showQueryView();
                             fetchSheetData();
                         },
                     });
                     isGoogleSdkLoaded = true;
-                    document.getElementById('auth-btn').disabled = false;
-                } catch (e) {
-                    showError("系統初始化失敗，請重新整理頁面。");
-                }
-            } else {
-                setTimeout(initGoogleAuth, 800);
-            }
+                } catch (e) { console.error(e); }
+            } else { setTimeout(initGoogleAuth, 800); }
         }
 
         window.onload = initGoogleAuth;
@@ -390,41 +368,26 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        function showError(msg) {
-            const errorEl = document.getElementById('auth-error');
-            errorEl.innerText = msg;
-            errorEl.classList.remove('hidden');
-        }
-
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
-            const errorDisplay = document.getElementById('api-error-display');
             const tableContainer = document.getElementById('table-container');
-            
-            errorDisplay.classList.add('hidden');
-            tableContainer.classList.add('hidden');
             loadingEl.classList.remove('hidden');
 
             try {
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${rangesParam}`;
                 
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
+                const response = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
                 const data = await response.json();
-                
-                if (data.error) throw new Error(data.error.message);
                 
                 allMergedData = [];
                 let firstSheetHeaders = [];
 
-                if (data.valueRanges && data.valueRanges.length > 0) {
+                if (data.valueRanges) {
                     data.valueRanges.forEach((vr, index) => {
                         const sheetFullName = TARGET_SHEETS[index];
                         const regionLabel = sheetFullName.match(/\((.*?)\)/)?.[1] || sheetFullName;
                         const rows = vr.values;
-                        
                         if (rows && rows.length > 0) {
                             if (index === 0) firstSheetHeaders = rows[0]; 
                             rows.slice(1).forEach(row => {
@@ -439,17 +402,9 @@
                     buildColumnMapping(firstSheetHeaders);
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
-                    
-                    if (document.getElementById('searchInput').value.trim() !== "") {
-                        performSearch(true);
-                    }
                 }
-            } catch (err) {
-                document.getElementById('api-error-msg').innerText = err.message;
-                errorDisplay.classList.remove('hidden');
-            } finally {
-                loadingEl.classList.add('hidden');
-            }
+            } catch (err) { console.error(err); } 
+            finally { loadingEl.classList.add('hidden'); }
         }
 
         function buildColumnMapping(sheetHeaders) {
@@ -468,7 +423,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (config.isSN || config.isSource) return;
                 const label = document.createElement('label');
-                // 優化：移除 inline-flex 以配合 Grid 佈局
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -479,7 +433,6 @@
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 字級維持 12pt 並確保不換行
                 span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;
@@ -492,9 +445,7 @@
         function toggleAllColumns(isVisible) {
             const checkboxes = document.getElementById('column-filters').querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach((cb) => cb.checked = isVisible);
-            columnVisibility.forEach((_, idx) => {
-                if (idx > 1) columnVisibility[idx] = isVisible; 
-            });
+            columnVisibility.forEach((_, idx) => { if (idx > 1) columnVisibility[idx] = isVisible; });
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
@@ -504,10 +455,9 @@
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 智能判斷職稱標示邏輯：深藍色系高亮
+        // 職務標示邏輯：深藍文字 + 淡藍底色
         function highlightJobKeywords(text) {
             if (!text) return "";
-            // 先保護標籤，避免替換 class 屬性
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
@@ -515,18 +465,18 @@
             }).join('');
         }
 
+        // 數字高亮邏輯：標紅、排除列表編號、公式保留
         function highlightNumbers(text) {
             if (!text) return "";
-            // 保護標籤，避免數字高亮破壞 class="highlight-num" 等結構
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
                 return part.replace(/(\*\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pStar, p1, p2, p3, p4) => {
-                    if (pStar) return `<span class="highlight-num">${match}</span>`;
+                    if (pStar) return `<span class="highlight-num">${match}</span>`; // 公式
                     if (p1) {
                         const val = parseInt(p1.replace(/[^\d]/g, ''));
-                        if (val >= 100) return `<span class="highlight-num">${match}</span>`;
-                        return match; 
+                        if (val >= 100) return `<span class="highlight-num">${match}</span>`; // 數值
+                        return match; // 列表編號排除
                     }
                     if (p2) return match; 
                     return `<span class="highlight-num">${match}</span>`;
@@ -534,7 +484,7 @@
             }).join('');
         }
 
-        // 優化：搜尋結果中不再標示藍色文字與背景，僅加粗以供識別。若為「公司」則跳過。
+        // 搜尋結果標註：僅加粗，排除完全匹配與「公司」
         function boldMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
@@ -566,7 +516,7 @@
             noResultsEl.classList.add('hidden');
             
             if (countEl) {
-                countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${dataRows.length} 筆搜尋結果`;
+                countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${dataRows.length} 筆搜尋結果`;
                 countEl.classList.remove('hidden');
             }
 
@@ -575,11 +525,8 @@
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
-                
-                // 應用自定義寬度類別
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
-                
                 th.textContent = config.display;
                 headerRow.appendChild(th);
             });
@@ -600,43 +547,40 @@
                         td.innerHTML = `<span class="region-badge">${row.__sheetSource || "總區"}</span>`;
                     } else {
                         const sheetIdx = columnMapping[i];
-                        let rawCellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
-                        let cellContent = rawCellContent;
-                        
+                        let rawValue = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
+                        let displayValue = rawValue;
+
+                        // 核准出差轉換與底色
+                        if (config.isApproval) {
+                            td.classList.add('approval-cell');
+                            const v = rawValue.trim();
+                            if (v === "是") displayValue = "Y";
+                            else if (v === "否") displayValue = "N";
+                            else displayValue = "";
+                        }
+
+                        // 自動換行規則
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
-                            cellContent = cellContent.replace(/\n/g, '<br>');
-                            cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            cellContent = cellContent.replace(/(?!^)(?<!\*)(\d+[\.\)])/g, '<br>$1');
-                            cellContent = cellContent.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
+                            displayValue = displayValue.replace(/\n/g, '<br>');
+                            displayValue = displayValue.replace(/(?!^)([●■◆・])/g, '<br>$1');
+                            displayValue = displayValue.replace(/(?!^)(?<!\*)(\d+[\.\)])/g, '<br>$1');
+                            displayValue = displayValue.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 
-                        // 寬度邏輯與樣式應用
-                        if (config.widthClass) {
-                            td.classList.add(config.widthClass);
-                        } else if (cellContent.length > 25) {
-                            td.classList.add('content-cell');
-                        } else {
-                            td.classList.add('whitespace-nowrap');
-                        }
+                        if (config.widthClass) td.classList.add(config.widthClass);
+                        else if (displayValue.length > 25) td.classList.add('content-cell');
+                        else td.classList.add('whitespace-nowrap');
 
-                        // 判斷是否為完全匹配。若完全匹配，依要求不加粗。
-                        const isExactMatch = rawCellContent.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
-                        let html = cellContent;
+                        const isExactMatch = rawValue.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
+                        let html = displayValue;
 
                         if (!isExactMatch) {
-                            // 先處理搜尋詞標註 (match-bold)
                             html = boldMatches(html, lastSearchTerm); 
-                            // 處理職稱相關藍色高亮 (job-keyword)
                             html = highlightJobKeywords(html); 
-                            // 處理幣別加粗
                             html = highlightCurrencies(html); 
-                            // 處理數字紅色高亮 (針對特定政策欄位且受保護處理)
-                            if (autoWrapFields.includes(config.display)) {
-                                html = highlightNumbers(html);
-                            }
+                            if (autoWrapFields.includes(config.display)) html = highlightNumbers(html);
                         }
-                        
                         td.innerHTML = html;
                     }
                     tr.appendChild(td);
@@ -705,16 +649,7 @@
 
             const searchAction = () => {
                 currentRows = allMergedData.filter(row => {
-                    return row.some(cell => {
-                        const cellStr = String(cell).toLowerCase();
-                        if (cellStr.includes(term)) return true;
-                        if (term.includes('/') && term.length >= 3) {
-                            const parts = term.split('/');
-                            const regex = new RegExp(`(^|/|\\-)${parts[0]}/0?${parts[1]}($|/|\\-)`);
-                            if (regex.test(cellStr)) return true;
-                        }
-                        return false;
-                    });
+                    return row.some(cell => String(cell).toLowerCase().includes(term));
                 });
                 
                 if (!skipLoading) loadingEl.classList.add('hidden');

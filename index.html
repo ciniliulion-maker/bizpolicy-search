@@ -301,23 +301,23 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 核心規格定義
+        // 核心規格定義與關鍵字偵測優化：解決資料抓取為空的核心
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
-            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼"] },
-            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司名稱", "企業同行"] },
-            { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位"] },
-            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "服務業務"] },
-            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
-            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票", "規範說明"] },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票", "AIR"] },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL"] },
-            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價"] },
-            { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款"] },
-            { original: "代轉開立", display: "代轉", searchKeys: ["代轉"] },
-            { original: "注意事項", display: "注意事項", searchKeys: ["注意事項"] },
-            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間"] }
+            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人", "代碼", "CODE"] },
+            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業", "公司", "戶名"] },
+            { original: "主要服務單位", display: "服務單位", searchKeys: ["單位", "部門"] },
+            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["業務"] },
+            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["核准", "是否核准"] }, 
+            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票", "改票", "流程"] },
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票", "AIR", "政策"] },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL", "住宿"] },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價", "報價策略"] },
+            { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款", "PAYMENT"] },
+            { original: "代轉開立", display: "代轉", searchKeys: ["代轉", "開立"] },
+            { original: "注意事項", display: "注意事項", searchKeys: ["注意", "備註", "NOTE"] },
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["時間", "更新", "UPDATE"] }
         ];
 
         let allMergedData = []; 
@@ -344,8 +344,6 @@
 
         window.onload = initGoogleAuth;
 
-        function handleAuthClick() { /* 由 initGoogleAuth 綁定 */ }
-
         function signOut() { location.reload(); }
 
         function showQueryView() {
@@ -353,7 +351,7 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 核心修復邏輯：規格化資料抓取
+        // 核心修復邏輯：針對每個分頁獨立掃描欄位，解決錯位與名稱不符導致資料為空的問題
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -368,32 +366,47 @@
 
                 if (data.valueRanges) {
                     data.valueRanges.forEach((vr, sheetIdx) => {
-                        const regionLabel = TARGET_SHEETS[sheetIdx].match(/\((.*?)\)/)?.[1] || "總部";
+                        const sheetName = TARGET_SHEETS[sheetIdx];
+                        const regionLabel = sheetName.match(/\((.*?)\)/)?.[1] || "總部";
                         const rows = vr.values;
                         if (!rows || rows.length < 2) return;
 
-                        const headers = rows[0].map(h => (h || "").toString().replace(/[\n\r\s]/g, ""));
+                        // 徹底清理標題中的換行與不可見字元，並轉為大寫以增加匹配機率
+                        const rawHeaders = rows[0] || [];
+                        const cleanedHeaders = rawHeaders.map(h => (h || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
-                        // 為該分頁計算對應關係
+                        // 為該分頁獨立計算對應關係
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             
-                            // 嘗試多重匹配：1. 完整比對 2. 關鍵字比對
-                            let idx = headers.findIndex(h => h === config.original.replace(/[\n\r\s]/g, ""));
+                            const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
+                            
+                            // 1. 精確比對 (完全一致)
+                            let idx = cleanedHeaders.findIndex(h => h === target);
+                            
+                            // 2. 關鍵字包含比對 (如果精確比對失敗，檢查是否包含 searchKeys 中的任何一個)
                             if (idx === -1 && config.searchKeys) {
-                                idx = headers.findIndex(h => config.searchKeys.some(key => h.includes(key)));
+                                idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
+                            
+                            // 3. 互含比對：標題包含目標 或 目標包含標題
+                            if (idx === -1) {
+                                idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
+                            }
+                            
                             return idx;
                         });
 
-                        // 規格化每一列資料
+                        // 將資料規格化為統一結構
                         rows.slice(1).forEach(row => {
-                            if (row.length === 0 || row.every(c => !c || c.trim() === "")) return;
+                            if (row.length === 0 || row.every(c => !c || c.toString().trim() === "")) return;
+                            
+                            const normalizedRowData = mapping.map(idx => (idx !== -1 && row[idx] !== undefined) ? row[idx].toString() : "");
                             
                             const normalizedRow = {
                                 __source: regionLabel,
-                                __raw: row, // 原始列資料，供模糊搜尋使用
-                                data: mapping.map(idx => (idx !== -1 && row[idx]) ? row[idx].toString() : "")
+                                __raw: row, // 保留原始列資料供搜尋使用
+                                data: normalizedRowData
                             };
                             allMergedData.push(normalizedRow);
                         });
@@ -402,7 +415,7 @@
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
-            } catch (err) { console.error("資料抓取失敗:", err); } 
+            } catch (err) { console.error("資料同步出錯:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
@@ -433,7 +446,7 @@
             const checkboxes = document.getElementById('column-filters').querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach((cb, idx) => {
                 cb.checked = isVisible;
-                columnVisibility[idx + 2] = isVisible; // 跳過序號與區域
+                columnVisibility[idx + 2] = isVisible; 
             });
             if (currentRows.length > 0) renderTable(currentRows);
         }
@@ -522,7 +535,7 @@
                     } else {
                         let val = rowObj.data[i] || "";
                         
-                        // 核准出差邏輯
+                        // 核准出差轉換邏輯
                         if (config.isApproval) {
                             if (val.includes("是")) { val = "Y"; td.classList.add('approval-y'); }
                             else if (val.includes("否")) { val = "N"; td.classList.add('text-center'); }

@@ -66,10 +66,11 @@
             font-weight: 700;
         }
         
-        /* 優化：搜尋詞匹配樣式 (改為僅加粗，不標藍色字與底色) */
+        /* 搜尋詞匹配樣式 (優化：僅加粗，不標藍色與背景) */
         .match-bold {
             font-weight: 800;
             color: inherit;
+            background: none !important;
         }
         
         /* 幣別高亮樣式 */
@@ -166,7 +167,7 @@
             align-items: center;
             cursor: pointer;
             transition: background-color 0.2s;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
         .google-auth-btn:hover {
@@ -208,7 +209,7 @@
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
-            <!-- 搜尋區：強化灰色背景與對比 -->
+            <!-- 搜尋區 -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
                 <div class="flex flex-col md:flex-row items-stretch gap-3">
                     <div class="flex-1 relative flex items-center">
@@ -226,7 +227,7 @@
                         class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md">
                         查詢
                     </button>
-                    <button onclick="signOut()" class="px-4 py-2 text-sm font-bold text-slate-400 hover:text-red-500">登出</button>
+                    <button onclick="signOut()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500">登出</button>
                 </div>
             </div>
 
@@ -453,7 +454,6 @@
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 字級改為 12pt
                 span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;
@@ -481,8 +481,7 @@
         // 智能判斷職稱標示邏輯：深藍色系高亮
         function highlightJobKeywords(text) {
             if (!text) return "";
-            
-            // 保護 HTML 標籤，避免替換 class 名稱中的內容
+            // 先保護標籤，避免替換 class 屬性
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
@@ -492,6 +491,7 @@
 
         function highlightNumbers(text) {
             if (!text) return "";
+            // 保護標籤
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
@@ -508,11 +508,14 @@
             }).join('');
         }
 
-        // 優化：搜尋結果中不再標示藍色與背景，僅加粗以供識別
+        // 優化：搜尋結果中不再標示藍色文字與背景，僅加粗以供識別。若為「公司」則跳過。
         function boldMatches(text, term) {
             if (!text || !term) return text;
             
-            // 保護 HTML 標籤，避免替換 class 名稱中的內容
+            // 根據要求：若搜尋字詞為「公司」，則不標記任何樣式
+            if (term.trim() === '公司') return text;
+            
+            // 保護 HTML 標籤
             const parts = text.split(/(<[^>]+>)/g);
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             
@@ -551,7 +554,6 @@
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
-                if(config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
                 headerRow.appendChild(th);
             });
@@ -586,15 +588,18 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 智慧判斷：若搜尋結果與關鍵字完全相同，則不標示加粗
+                        // 判斷是否為完全匹配。若完全匹配，依要求不加粗。
                         const isExactMatch = rawCellContent.trim().toLowerCase() === lastSearchTerm.trim().toLowerCase();
                         let html = cellContent;
 
                         if (!isExactMatch) {
+                            // 先處理搜尋詞標註 (match-bold)
                             html = boldMatches(html, lastSearchTerm); 
-                            html = highlightCurrencies(html); 
+                            // 處理職稱相關藍色高亮 (job-keyword)
                             html = highlightJobKeywords(html); 
-                            
+                            // 處理幣別加粗
+                            html = highlightCurrencies(html); 
+                            // 處理數字紅色高亮 (避開 HTML 標籤屬性)
                             if (autoWrapFields.includes(config.display)) {
                                 html = highlightNumbers(html);
                             }

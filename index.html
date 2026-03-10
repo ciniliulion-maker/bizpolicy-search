@@ -66,7 +66,7 @@
             font-weight: 700;
         }
         
-        /* 搜尋詞匹配樣式 (優化：僅加粗，不標藍色與背景) */
+        /* 搜尋詞匹配樣式 (僅加粗，不標藍色與背景) */
         .match-bold {
             font-weight: 800;
             color: inherit;
@@ -128,7 +128,6 @@
             bottom: 2rem;
             right: 2rem; 
             z-index: 9999;
-            /* 更多資訊、返回前面 請用藍色底色 */
             background-color: #2563eb;
             color: white;
             padding: 0.75rem 1.25rem;
@@ -153,25 +152,31 @@
             pointer-events: auto;
         }
 
-        /* Google 標準白色按鈕樣式 */
+        /* Google 標準白色按鈕樣式 - 優化為圓弧造型 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
             border: 1px solid #dadce0;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px; /* 完全圓弧樣式 */
             font-family: 'Roboto', 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 500;
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: background-color 0.2s;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
         .google-auth-btn:hover {
             background-color: #f8f9fa;
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.30), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .google-auth-btn:active {
+            background-color: #eeeeee;
+            transform: scale(0.98);
         }
 
         .google-auth-btn img {
@@ -200,7 +205,7 @@
             <h2 class="text-xl font-bold text-slate-900 mb-2">權限驗證</h2>
             <p class="text-slate-500 mb-8 text-center px-10 text-sm">請使用具備試算表權限的 Google 帳號登入。</p>
             
-            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group">
+            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group disabled:opacity-50">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G">
                 <span>使用 Google 帳號登入</span>
             </button>
@@ -454,6 +459,7 @@
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
+                // 字級改為 12pt
                 span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;

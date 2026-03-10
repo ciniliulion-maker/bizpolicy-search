@@ -356,7 +356,6 @@
             container.innerHTML = '';
 
             DISPLAY_CONFIG.forEach((config, index) => {
-                // 序號欄位不產生核選方塊
                 if (config.isSN) return;
 
                 const label = document.createElement('label');
@@ -388,7 +387,6 @@
             checkboxes.forEach((cb) => {
                 cb.checked = isVisible;
             });
-            // 手動更新對應的 Visibility，排除序號欄位（index 0）
             columnVisibility.forEach((_, idx) => {
                 if (idx !== 0) columnVisibility[idx] = isVisible;
             });
@@ -480,23 +478,27 @@
                 bodyEl.appendChild(tr);
             });
             
-            // 渲染後檢查捲軸，延遲以確保 DOM 已渲染
             setTimeout(() => updateScrollHint(true), 100);
         }
 
-        // 核心修正：水平滾動提示邏輯
+        // 核心修正：加入 query-view 狀態檢查
         function updateScrollHint(shouldCheck) {
             const container = document.getElementById('table-container');
             const hint = document.getElementById('scroll-hint');
-            if (!container || !hint) return;
+            const queryView = document.getElementById('query-view');
+            if (!container || !hint || !queryView) return;
 
-            // 只有當表格容器不是隱藏狀態，且寬度確實超出時，才顯示提示
+            // 修正重點：如果目前還在登入畫面 (query-view 隱藏)，強制不顯示提示詞
+            if (queryView.classList.contains('hidden')) {
+                hint.classList.add('hidden');
+                return;
+            }
+
             const isVisible = !container.classList.contains('hidden');
             const isOverflowing = container.scrollWidth > container.clientWidth;
 
             if (shouldCheck && isVisible && isOverflowing) {
                 hint.classList.remove('hidden');
-                // 使用者開始滾動後隱藏提示
                 container.onscroll = () => hint.classList.add('hidden');
             } else {
                 hint.classList.add('hidden');

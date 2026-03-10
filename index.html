@@ -91,7 +91,7 @@
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式：取消紅色，僅保留粗體 */
+        /* 數字高亮樣式：僅保留粗體 */
         .highlight-num {
             font-weight: 700;
             color: inherit;
@@ -317,7 +317,7 @@
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char" },
             { original: "主要服務單位", display: "服務單位" },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char" },
-            // 修正：對應試算表中的完整標題
+            // 規範：對應試算表中可能帶有換行的標題
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char" },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char" },
@@ -412,16 +412,18 @@
             finally { loadingEl.classList.add('hidden'); }
         }
 
+        // 核心修復：強化標題匹配，移除換行符號
         function buildColumnMapping(sheetHeaders) {
             columnMapping = [];
             DISPLAY_CONFIG.forEach(config => {
                 if (config.isSN) { columnMapping.push(-2); return; }
                 if (config.isSource) { columnMapping.push(-3); return; }
                 
-                // 強化比對：試算表標題可能包含空格，使用 trim 並檢查是否包含
+                const normalizedTarget = config.original.replace(/[\n\r\s]/g, "");
+                
                 const idx = sheetHeaders.findIndex(h => {
-                    const header = h ? h.toString().trim() : "";
-                    return header === config.original || header.includes(config.original) || config.original.includes(header);
+                    const header = h ? h.toString().replace(/[\n\r\s]/g, "") : "";
+                    return header === normalizedTarget || header.includes(normalizedTarget) || normalizedTarget.includes(header);
                 });
                 columnMapping.push(idx);
             });
@@ -562,10 +564,10 @@
                             const v = rawValue.toString().trim();
                             if (v === "是") {
                                 displayValue = "Y";
-                                td.classList.add('approval-y'); // 僅 y 標粉紅底並置中
+                                td.classList.add('approval-y'); // 只有 Y 標粉紅底並置中
                             } else if (v === "否") {
                                 displayValue = "N";
-                                td.classList.add('text-center'); // n 僅置中
+                                td.classList.add('text-center'); // N 僅置中
                             } else {
                                 displayValue = "";
                             }
@@ -574,11 +576,10 @@
                         // 自動換行規則
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
-                            displayValue = displayValue.replace(/\n/g, '<br>');
-                            displayValue = displayValue.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            // 排除「*」或「+」後面的數字
-                            displayValue = displayValue.replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
-                            displayValue = displayValue.replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
+                            displayValue = displayValue.toString().replace(/\n/g, '<br>');
+                            displayValue = displayValue.toString().replace(/(?!^)([●■◆・])/g, '<br>$1');
+                            displayValue = displayValue.toString().replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
+                            displayValue = displayValue.toString().replace(/(?!^)([一二三四五六七八九十]+[、\.])/g, '<br>$1');
                         }
 
                         if (config.widthClass) td.classList.add(config.widthClass);

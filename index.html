@@ -53,7 +53,7 @@
             <p id="sub-title" class="text-slate-500 font-medium italic">行政-合約管理(台北)</p>
         </header>
 
-        <!-- 登入介面 -->
+        <!-- 登入介面 (未驗證時顯示) -->
         <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-slate-100 max-w-xl mx-auto">
             <div class="mb-8 p-4 bg-blue-50 rounded-full text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,7 +74,7 @@
             <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100 max-w-sm mx-auto"></div>
         </div>
 
-        <!-- 查詢介面 -->
+        <!-- 查詢介面 (驗證成功後顯示) -->
         <div id="query-view" class="hidden">
             <!-- 搜尋與登出區 -->
             <div class="bg-white p-6 rounded-t-3xl shadow-lg border border-slate-100">
@@ -160,12 +160,30 @@
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
         const RANGE = '行政-合約管理(台北)!A1:Z2000'; 
 
+        // 欄位顯示與更名配置
+        const DISPLAY_CONFIG = [
+            { original: "法人代碼", display: "法人代碼" },
+            { original: "企業同行名稱", display: "企業同行名稱" },
+            { original: "主要服務單位", display: "主要服務單位" },
+            { original: "主要服務業務", display: "主要服務業務" },
+            { original: "出差是否需經過核准", display: "需核淮出差" },
+            { original: "開票&改票流程及規範說明", display: "開票改票流程規範" },
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票差旅政策" },
+            { original: "飯店費用預算/條件 HOTEL", display: "酒店差旅政策" },
+            { original: "報價策略", display: "報價策略" },
+            { original: "付款方式", display: "付款方式" },
+            { original: "代轉開立", display: "代轉開立" },
+            { original: "注意事項", display: "注意事項" },
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "最近更新時間" }
+        ];
+
         let allData = [];
-        let filteredData = [];
+        let columnMapping = []; // 儲存 DISPLAY_CONFIG 對應到 allData 的索引
         let tokenClient = null;
         let accessToken = null;
         let isGoogleSdkLoaded = false;
-        let columnVisibility = []; // 儲存各欄位是否顯示 [true, true, ...]
+        let columnVisibility = []; // 儲存各目標欄位是否顯示 [true, true, ...]
+        let retryCount = 0;
 
         // 初始化 Google Auth 系統
         function initGoogleAuth() {
@@ -194,7 +212,10 @@
                     showError("系統初始化失敗，請重新整理頁面。");
                 }
             } else {
-                setTimeout(initGoogleAuth, 800);
+                retryCount++;
+                if (retryCount < 10) {
+                    setTimeout(initGoogleAuth, 800);
+                }
             }
         }
 
@@ -245,7 +266,8 @@
                 
                 if (data.values && data.values.length > 0) {
                     allData = data.values;
-                    columnVisibility = new Array(allData[0].length).fill(true);
+                    buildColumnMapping(allData[0]);
+                    columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                     renderTable(allData);
                 } else {
@@ -260,13 +282,22 @@
             }
         }
 
-        // 初始化欄位篩選核選方塊
+        // 建立目標欄位索引映射
+        function buildColumnMapping(sheetHeaders) {
+            columnMapping = [];
+            DISPLAY_CONFIG.forEach(config => {
+                // Fuzzy matching to find the index of original header in sheet
+                const idx = sheetHeaders.findIndex(h => h.trim().includes(config.original.substring(0, 10)));
+                columnMapping.push(idx);
+            });
+        }
+
+        // 初始化欄位篩選核選方塊 (使用顯示名稱)
         function initColumnFilters() {
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
-            const headers = allData[0];
 
-            headers.forEach((header, index) => {
+            DISPLAY_CONFIG.forEach((config, index) => {
                 const label = document.createElement('label');
                 label.className = "inline-flex items-center cursor-pointer group";
                 
@@ -281,7 +312,7 @@
 
                 const span = document.createElement('span');
                 span.className = "ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium";
-                span.textContent = header || `欄位 ${index + 1}`;
+                span.textContent = config.display;
 
                 label.appendChild(checkbox);
                 label.appendChild(span);
@@ -298,22 +329,18 @@
             refreshCurrentView();
         }
 
-        // 重新渲染當前已過濾的資料（用於欄位切換）
         function refreshCurrentView() {
             const term = document.getElementById('searchInput').value.toLowerCase().trim();
             if (term === "") {
                 renderTable(allData);
             } else {
-                // 如果有搜尋過，就維持搜尋結果的資料列，只改變顯示欄位
                 performSearch(true); 
             }
         }
 
-        // 數字高亮邏輯：包含阿拉伯數字與國字數字
+        // 數字高亮邏輯
         function highlightNumbers(text) {
             if (!text) return "";
-            // 阿拉伯數字: \d+
-            // 國字數字: [一二三四五六七八九十百千萬零]+
             const numRegex = /([0-9]+|[一二三四五六七八九十百千萬零]+)/g;
             return text.replace(numRegex, '<span class="highlight-num">$1</span>');
         }
@@ -332,7 +359,6 @@
                 return;
             }
 
-            // 檢查是否有任何欄位被勾選
             if (!columnVisibility.includes(true)) {
                 tableContainer.classList.add('hidden');
                 showNoResultsFound("請至少勾選一個欄位以顯示資料。");
@@ -342,39 +368,41 @@
             tableContainer.classList.remove('hidden');
             noResultsEl.classList.add('hidden');
 
-            const headers = allData[0]; // 標題永遠抓原始資料的第一筆
+            // 建立表頭 (使用 display 更名後的名稱)
             const headerRow = document.createElement('tr');
-            
-            headers.forEach((text, index) => {
-                if (!columnVisibility[index]) return; // 隱藏欄位
+            DISPLAY_CONFIG.forEach((config, index) => {
+                if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left text-xs font-extrabold text-slate-600 uppercase tracking-wider border-b border-slate-200";
-                th.textContent = text;
+                th.textContent = config.display;
                 headerRow.appendChild(th);
             });
             headerEl.appendChild(headerRow);
 
-            rows.slice(rows === allData ? 1 : 0).forEach(row => {
+            // 渲染內容
+            // rows === allData 時 slice(1) 跳過原始表頭，如果是過濾後的 rows 直接渲染
+            const dataToRender = rows === allData ? rows.slice(1) : rows;
+
+            dataToRender.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50/50 transition-colors border-b border-slate-50 align-top";
                 
-                headers.forEach((_, i) => {
-                    if (!columnVisibility[i]) return; // 隱藏欄位
+                DISPLAY_CONFIG.forEach((config, i) => {
+                    if (!columnVisibility[i]) return;
                     
                     const td = document.createElement('td');
-                    let cellContent = row[i] || "";
+                    const sheetIdx = columnMapping[i];
+                    let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                     td.className = "px-6 py-5";
                     
-                    // 針對內容長度或特定欄位優化排版
                     if (cellContent.length > 25) {
                         td.classList.add('content-cell');
                     } else {
                         td.classList.add('whitespace-nowrap');
                     }
 
-                    // 特別處理「機票差旅政策 AIR」的高亮
-                    const headerName = headers[i] || "";
-                    if (headerName.includes("機票差旅政策") && headerName.includes("AIR")) {
+                    // 針對「機票差旅政策」的高亮
+                    if (config.display === "機票差旅政策") {
                         td.innerHTML = highlightNumbers(cellContent);
                     } else {
                         td.textContent = cellContent;
@@ -413,7 +441,6 @@
             }
 
             const searchAction = () => {
-                const headers = allData[0];
                 const content = allData.slice(1);
 
                 if (term === "") {

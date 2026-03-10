@@ -66,12 +66,10 @@
             font-weight: 800;
         }
         
-        /* 職稱/職級關鍵字高亮 (文字淡粉紅底) */
+        /* 職稱/職級關鍵字高亮 (深藍色粗體) */
         .job-keyword {
-            background-color: #ffe4e6; /* rose-100 */
-            padding-left: 0.25rem;
-            padding-right: 0.25rem;
-            border-radius: 0.25rem;
+            color: #1e3a8a; 
+            font-weight: 800;
         }
 
         /* 捲軸美化 */
@@ -240,7 +238,7 @@
                 <button onclick="fetchSheetData()" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-900 transition-all">重新讀取資料</button>
             </div>
 
-            <!-- 結果筆數顯示區域 (位於表格左上方) -->
+            <!-- 結果筆數顯示區域 -->
             <div id="result-count" class="mb-3 px-4 py-1 text-sm font-bold text-slate-500 hidden border-l-4 border-blue-500 bg-blue-50/50 inline-block rounded-r-lg"></div>
 
             <!-- 表格區域 -->
@@ -260,7 +258,7 @@
                     </svg>
                 </div>
                 <h3 class="text-xl font-bold text-slate-400">跨區域搜尋：查無符合條件的資料</h3>
-                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
+                <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤，或是您目前對某些分頁無檢視權限。</p>
             </div>
         </div>
     </div>
@@ -464,14 +462,14 @@
             if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
         }
 
-        // 幣別高亮邏輯：加粗常用幣別代碼
+        // 幣別高亮邏輯
         function highlightCurrencies(text) {
             if (!text) return "";
             const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
-        // 職級標示邏輯：僅針對文字本身加上淡粉紅底
+        // 職級標示邏輯：深藍色粗體
         function highlightJobKeywords(text) {
             if (!text) return "";
             return text.replace(/(職級|職稱|董事長|總經理|副總)/g, '<span class="job-keyword">$1</span>');
@@ -480,12 +478,8 @@
         // 數字高亮邏輯：排除項目編號 (如 1. 2. 或 一、 二、)
         function highlightNumbers(text) {
             if (!text) return "";
-            // 第一組 (\d+[\.\)])|(\(\d+\)) 匹配阿拉伯數字項目編號，不標色
-            // 第二組 ([一二三四五六七八九十]+[、\.]) 匹配中文項目編號，不標色
-            // 第三組 (\d+) 匹配一般數字，標紅色
-            // 第四組 ([一二三四五六七八九十百千萬零]+) 匹配中文數字，標紅色
             return text.replace(/(\d+[\.\)])|(\(\d+\))|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, p1, p2, p3, p4, p5) => {
-                if (p1 || p2 || p3) return match; // 項目編號維持原樣
+                if (p1 || p2 || p3) return match; 
                 return `<span class="highlight-num">${match}</span>`;
             });
         }
@@ -550,8 +544,8 @@
                         const sheetIdx = columnMapping[i];
                         let cellContent = (sheetIdx !== -1 && row[sheetIdx]) ? row[sheetIdx] : "";
                         
-                        // 處理自動換行與高亮
-                        const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範"];
+                        // 優化：處理特定政策與「注意事項」欄位的換行與高亮
+                        const autoWrapFields = ["機票差旅政策", "酒店差旅政策", "報價策略", "開票改票流程規範", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             cellContent = cellContent.replace(/\n/g, '<br>');
                             cellContent = cellContent.replace(/(?!^)([●■◆・])/g, '<br>$1');
@@ -562,10 +556,12 @@
                         if (cellContent.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        let html = boldMatches(cellContent, lastSearchTerm);
-                        html = highlightCurrencies(html);
+                        // 文字高亮處理
+                        let html = boldMatches(cellContent, lastSearchTerm); 
+                        html = highlightCurrencies(html); 
                         html = highlightJobKeywords(html); 
                         
+                        // 數據高亮 (避開項目符號)
                         if (autoWrapFields.includes(config.display)) {
                             html = highlightNumbers(html);
                         }

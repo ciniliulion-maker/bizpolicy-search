@@ -254,13 +254,14 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區 -->
+            <!-- 欄位控制區 (優化：使用 Grid 確保兩排對齊) -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
                     <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">開啟全部</button>
                 </div>
-                <div id="column-filters" class="flex flex-wrap gap-x-6 gap-y-3">
+                <!-- 改為 Grid 佈局以確保對齊 -->
+                <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
                     <span class="text-slate-300 text-xs italic">載入中...</span>
                 </div>
             </div>
@@ -331,7 +332,7 @@
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-25-char" },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char" },
             { original: "報價策略", display: "報價策略", widthClass: "w-15-char" },
-            { original: "付款方式", display: "付款", widthClass: "w-6-char" }, // 優化：欄寬 6 字元
+            { original: "付款方式", display: "付款", widthClass: "w-6-char" },
             { original: "代轉開立", display: "代轉" },
             { original: "注意事項", display: "注意事項" },
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間" }
@@ -467,18 +468,19 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (config.isSN || config.isSource) return;
                 const label = document.createElement('label');
-                label.className = "inline-flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
+                // 優化：移除 inline-flex 以配合 Grid 佈局
+                label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
-                checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500";
+                checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 flex-shrink-0";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
                     if (!document.getElementById('table-container').classList.contains('hidden')) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 字級改為 12pt
-                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold";
+                // 字級維持 12pt 並確保不換行
+                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis";
                 span.style.fontSize = "12pt";
                 span.textContent = config.display;
                 label.appendChild(checkbox);
@@ -515,6 +517,7 @@
 
         function highlightNumbers(text) {
             if (!text) return "";
+            // 保護標籤，避免數字高亮破壞 class="highlight-num" 等結構
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
@@ -584,7 +587,6 @@
 
             dataRows.forEach((row, rowIndex) => {
                 const tr = document.createElement('tr');
-                // 優化：將懸停底色改為更明顯的 blue-50
                 tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
@@ -629,7 +631,7 @@
                             html = highlightJobKeywords(html); 
                             // 處理幣別加粗
                             html = highlightCurrencies(html); 
-                            // 處理數字紅色高亮
+                            // 處理數字紅色高亮 (針對特定政策欄位且受保護處理)
                             if (autoWrapFields.includes(config.display)) {
                                 html = highlightNumbers(html);
                             }

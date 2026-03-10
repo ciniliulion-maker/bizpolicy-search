@@ -69,31 +69,45 @@
             color: #64748b;
         }
 
-        /* 螢幕底部滑動提示 */
-        #scroll-hint {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            pointer-events: none;
-            background-color: rgba(37, 99, 235, 0.9);
+        /* 改良後的向右滑動按鈕提示 */
+        #scroll-right-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            background-color: rgba(37, 99, 235, 0.85);
             color: white;
-            padding: 0.5rem 1.25rem;
-            border-radius: 9999px;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
             font-size: 0.875rem;
             font-weight: 700;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            animation: bounce 2s infinite;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
         }
 
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateX(-50%) translateY(0);}
-            40% {transform: translateX(-50%) translateY(-10px);}
-            60% {transform: translateX(-50%) translateY(-5px);}
+        #scroll-right-btn:hover {
+            background-color: rgba(29, 78, 216, 1);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #scroll-right-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* 呼吸動畫 */
+        .pulse-hint {
+            animation: pulse-horizontal 1.5s infinite;
+        }
+
+        @keyframes pulse-horizontal {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
         }
     </style>
 </head>
@@ -195,6 +209,11 @@
                         <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
                     </table>
                 </div>
+
+                <!-- 互動式向右滾動按鈕 (點擊會滾動) -->
+                <div id="scroll-right-btn" class="hidden" onclick="scrollTableRight()">
+                    向右滑動查看更多 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pulse-hint" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </div>
             </div>
             
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
@@ -207,11 +226,6 @@
                 <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
             </div>
         </div>
-    </div>
-
-    <!-- 螢幕正下方的滑動提示 (固定在 Viewport) -->
-    <div id="scroll-hint" class="hidden">
-        向右滑動查看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </div>
 
     <script>
@@ -478,30 +492,48 @@
                 bodyEl.appendChild(tr);
             });
             
-            setTimeout(() => updateScrollHint(true), 100);
+            setTimeout(() => updateScrollHint(true), 150);
         }
 
-        // 核心修正：加入 query-view 狀態檢查
+        // 智慧滾動按鈕邏輯
         function updateScrollHint(shouldCheck) {
             const container = document.getElementById('table-container');
-            const hint = document.getElementById('scroll-hint');
+            const hintBtn = document.getElementById('scroll-right-btn');
             const queryView = document.getElementById('query-view');
-            if (!container || !hint || !queryView) return;
+            
+            if (!container || !hintBtn || !queryView) return;
 
-            // 修正重點：如果目前還在登入畫面 (query-view 隱藏)，強制不顯示提示詞
-            if (queryView.classList.contains('hidden')) {
-                hint.classList.add('hidden');
+            // 如果目前還在登入畫面，或表格是隱藏的，直接隱藏按鈕
+            if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
+                hintBtn.classList.add('hidden');
                 return;
             }
 
-            const isVisible = !container.classList.contains('hidden');
+            // 判斷是否需要滾動 (內容寬度 > 容器寬度 且 還沒滾動到最右端)
             const isOverflowing = container.scrollWidth > container.clientWidth;
+            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 10);
 
-            if (shouldCheck && isVisible && isOverflowing) {
-                hint.classList.remove('hidden');
-                container.onscroll = () => hint.classList.add('hidden');
+            if (shouldCheck && isOverflowing && !isAtEnd) {
+                hintBtn.classList.remove('hidden');
+                // 綁定滾動事件，當滑動到右端時自動隱藏
+                container.onscroll = () => {
+                    const scrolledAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 10);
+                    if (scrolledAtEnd) {
+                        hintBtn.classList.add('hidden');
+                    } else {
+                        hintBtn.classList.remove('hidden');
+                    }
+                };
             } else {
-                hint.classList.add('hidden');
+                hintBtn.classList.add('hidden');
+            }
+        }
+
+        // 按下提示按鈕後的動作：平滑向右移動
+        function scrollTableRight() {
+            const container = document.getElementById('table-container');
+            if (container) {
+                container.scrollBy({ left: 300, behavior: 'smooth' });
             }
         }
 

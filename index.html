@@ -25,14 +25,23 @@
             line-height: 1.6;
             vertical-align: top;
         }
+        
+        /* 核心優化：固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #f8fafc;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            top: -1px; /* 微調以消除邊界縫隙 */
+            z-index: 40;
+            background-color: #f8fafc; /* 使用與表頭一致的底色 */
+            box-shadow: inset 0 -2px 0 #e2e8f0; /* 底線效果 */
             white-space: nowrap;
         }
+
+        /* 確保水平捲動時，表頭也能跟著橫移 */
+        #table-container {
+            overflow-x: auto;
+            overflow-y: visible; /* 允許垂直方向露出 sticky 元素 */
+        }
+
         /* 數字高亮樣式 (紅色加粗) */
         .highlight-num {
             color: #dc2626; /* Tailwind red-600 */
@@ -88,7 +97,7 @@
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none; /* 隱藏時不可點擊 */
+            pointer-events: none;
             user-select: none;
             backdrop-filter: blur(4px);
         }
@@ -106,7 +115,7 @@
         .scroll-hint-btn.show {
             opacity: 1;
             transform: translateY(0);
-            pointer-events: auto; /* 顯示時可點擊 */
+            pointer-events: auto;
         }
 
         #scroll-hint-right {
@@ -209,8 +218,8 @@
 
             <!-- 表格區域 -->
             <div class="relative">
-                <div id="table-container" class="overflow-x-auto custom-scrollbar bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
-                    <table id="main-table" class="min-w-full divide-y divide-slate-100">
+                <div id="table-container" class="custom-scrollbar bg-white rounded-3xl shadow-xl border border-slate-100 hidden">
+                    <table id="main-table" class="min-w-full divide-y divide-slate-100 border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
                         <tbody id="tableBody" class="divide-y divide-slate-50 text-sm text-slate-600 font-medium"></tbody>
                     </table>
@@ -476,7 +485,7 @@
                     if (!columnVisibility[i]) return;
                     
                     const td = document.createElement('td');
-                    td.className = "px-6 py-5";
+                    td.className = "px-6 py-5 border-b border-slate-100";
                     
                     if (config.isSN) {
                         td.className += " sn-cell";
@@ -508,18 +517,16 @@
             tableContainer.onscroll = updateScrollHints;
         }
 
-        // 優化後的捲動功能：按比例捲動
         function scrollTable(direction) {
             const container = document.getElementById('table-container');
             if (!container) return;
-            const scrollDist = container.clientWidth * 0.7; // 每次滑動 70% 的寬度
+            const scrollDist = container.clientWidth * 0.7; 
             container.scrollBy({
                 left: direction === 'right' ? scrollDist : -scrollDist,
                 behavior: 'smooth'
             });
         }
 
-        // 智慧偵測：左右按鈕提示詞邏輯
         function updateScrollHints() {
             const container = document.getElementById('table-container');
             const hintRight = document.getElementById('scroll-hint-right');
@@ -528,28 +535,22 @@
 
             if (!container || !hintRight || !hintLeft || !queryView) return;
 
-            // 1. 若還在登入畫面或表格被隱藏，全部強制移除
             if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
                 hintRight.classList.remove('show');
                 hintLeft.classList.remove('show');
                 return;
             }
 
-            // 2. 核心判定：scrollWidth 是否真的大於 clientWidth
             const isOverflowing = container.scrollWidth > (container.clientWidth + 5);
-            
-            // 3. 判定捲軸位置 (容錯值 15px)
             const isAtStart = container.scrollLeft <= 15;
             const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 25);
 
-            // 4. 右側按鈕：溢出 且 還沒到最右邊
             if (isOverflowing && !isAtEnd) {
                 hintRight.classList.add('show');
             } else {
                 hintRight.classList.remove('show');
             }
 
-            // 5. 左側按鈕：溢出 且 已經離開最左邊
             if (isOverflowing && !isAtStart) {
                 hintLeft.classList.add('show');
             } else {

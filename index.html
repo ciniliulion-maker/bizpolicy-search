@@ -68,6 +68,26 @@
             font-weight: 600;
             color: #64748b;
         }
+
+        /* 右下角固定提示詞樣式 */
+        #scroll-hint {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+            background-color: rgba(37, 99, 235, 0.9);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
@@ -97,7 +117,7 @@
                     <span id="btn-text">使用 Google 帳號登入</span>
                 </button>
             </div>
-            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100 max-w-sm mx-auto"></div>
+            <div id="auth-error" class="mt-6 text-red-500 font-medium hidden text-center px-4 bg-red-50 py-3 rounded-xl border border-red-100 max-sm mx-auto"></div>
         </div>
 
         <!-- 查詢介面 (驗證成功後顯示) -->
@@ -180,6 +200,11 @@
                 <p id="noResultsDetail" class="text-slate-300 mt-2 text-center px-6">請檢查關鍵字是否有誤。</p>
             </div>
         </div>
+    </div>
+
+    <!-- 右下角固定提示詞 -->
+    <div id="scroll-hint" class="hidden">
+        向右滑動看更多資料 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </div>
 
     <script>
@@ -393,6 +418,7 @@
             if (!dataRows || dataRows.length === 0) {
                 tableContainer.classList.add('hidden');
                 noResultsEl.classList.remove('hidden');
+                updateScrollHint();
                 return;
             }
 
@@ -444,7 +470,38 @@
                 });
                 bodyEl.appendChild(tr);
             });
+
+            // 渲染後偵測捲軸狀態
+            setTimeout(updateScrollHint, 100);
+            tableContainer.onscroll = updateScrollHint;
         }
+
+        // 偵測是否顯示「向右滑動」提示詞
+        function updateScrollHint() {
+            const container = document.getElementById('table-container');
+            const hint = document.getElementById('scroll-hint');
+            const queryView = document.getElementById('query-view');
+
+            if (!container || !hint || !queryView) return;
+
+            // 如果目前隱藏中，直接不顯示
+            if (queryView.classList.contains('hidden') || container.classList.contains('hidden')) {
+                hint.classList.add('hidden');
+                return;
+            }
+
+            // 判斷寬度是否超出 (scrollWidth > clientWidth) 且 使用者還沒滑動到最右端
+            const isOverflowing = container.scrollWidth > container.clientWidth;
+            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 10);
+
+            if (isOverflowing && !isAtEnd) {
+                hint.classList.remove('hidden');
+            } else {
+                hint.classList.add('hidden');
+            }
+        }
+
+        window.onresize = updateScrollHint;
 
         function showNoResultsFound(detailMsg) {
             document.getElementById('table-container').classList.add('hidden');
@@ -453,6 +510,7 @@
             if(detailMsg) {
                 document.getElementById('noResultsDetail').innerText = detailMsg;
             }
+            updateScrollHint();
         }
 
         function performSearch(skipLoading = false) {
@@ -472,6 +530,7 @@
             if (term === "") {
                 tableContainer.classList.add('hidden');
                 noResultsEl.classList.add('hidden');
+                updateScrollHint();
                 return;
             }
 
@@ -518,6 +577,7 @@
                 lastSearchTerm = "";
                 document.getElementById('table-container').classList.add('hidden');
                 document.getElementById('noResults').classList.add('hidden');
+                updateScrollHint();
             }
         });
     </script>

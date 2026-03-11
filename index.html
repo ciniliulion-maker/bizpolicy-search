@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級，恢復為靠左對齊 */
+        /* 固定表頭樣式與 10pt 字級，靠左對齊 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -73,13 +73,11 @@
             display: inline-block;
         }
         
-        /* 搜尋匹配標註：標紅色底線，不加粗 */
+        /* 搜尋匹配標註：標示紅字，不加粗 */
         .match-highlight {
-            text-decoration: underline !important;
-            text-decoration-color: #e11d48 !important;
-            text-underline-offset: 3px;
-            font-weight: 400 !important;
-            color: inherit;
+            color: #e11d48 !important; /* 標紅字 */
+            font-weight: 400 !important; /* 不用粗體字 */
+            text-decoration: none !important;
         }
         
         /* 幣別高亮樣式：特粗體 */
@@ -464,7 +462,7 @@
             }).join('');
         }
 
-        // 修改：標記搜尋結果為紅色底線，取消粗體
+        // 修改：將匹配文字標記為紅色字體，不加粗
         function highlightMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
@@ -494,7 +492,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                // 恢復為靠左對齊
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
@@ -509,7 +506,6 @@
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
-                    // 恢復為預設對齊
                     td.className = "px-6 py-5 border-b border-slate-200";
                     
                     let html = "";
@@ -520,7 +516,8 @@
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
-                        
+                        const textOnlyContent = valHtml.replace(/<[^>]+>/g, "").trim();
+
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
                             if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
@@ -539,13 +536,17 @@
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 統一搜尋高亮邏輯：僅紅色底線，不加粗
-                        let resultHtml = valHtml;
-                        resultHtml = highlightMatches(resultHtml, lastSearchTerm); 
-                        resultHtml = highlightJobKeywords(resultHtml);
-                        resultHtml = highlightCurrencies(resultHtml); 
-                        resultHtml = wrapNowrapUnits(resultHtml); 
-                        html = resultHtml;
+                        // 統一搜尋高亮邏輯：完全一致或部分包含均標紅字，不加粗
+                        if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
+                            html = `<span class="match-highlight">${valHtml}</span>`;
+                        } else {
+                            let resultHtml = valHtml;
+                            resultHtml = highlightMatches(resultHtml, lastSearchTerm); 
+                            resultHtml = highlightJobKeywords(resultHtml);
+                            resultHtml = highlightCurrencies(resultHtml); 
+                            resultHtml = wrapNowrapUnits(resultHtml); 
+                            html = resultHtml;
+                        }
                     }
                     td.innerHTML = html;
                     tr.appendChild(td);

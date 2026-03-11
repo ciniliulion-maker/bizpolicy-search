@@ -66,10 +66,10 @@
             font-size: 12pt !important;
         }
 
-        /* 來源色彩同步：紅色字體樣式 */
+        /* 來源色彩同步：還原原始紅色字體 */
         .source-red {
             color: #e11d48 !important;
-            font-weight: 800;
+            font-weight: 800; /* 紅色部分加粗更明顯 */
         }
 
         /* 公式與數字保護樣式：強制不斷行 */
@@ -315,34 +315,40 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 輔助函式：判斷顏色是否為紅色
+        // 輔助函式：優化判斷顏色是否為紅色
         function isColorRed(color) {
             if (!color) return false;
             const r = color.red || 0;
             const g = color.green || 0;
             const b = color.blue || 0;
-            // 寬鬆判定：紅色成分明顯高於綠色與藍色
-            return (r > 0.7 && g < 0.5 && b < 0.5);
+            // 改進判定：只要紅色成份明顯高於綠、藍即可，解決深紅、淺紅的判定問題
+            return (r > 0.6 && r > g + 0.15 && r > b + 0.15);
         }
 
-        // 輔助函式：將儲存格內容與 Rich Text 轉換為帶色彩的 HTML
+        // 輔助函式：將儲存格內容與每一段富文本轉換為帶色彩的 HTML
         function cellToHtml(cell) {
             const text = cell.formattedValue || "";
             if (!text) return "";
             
-            // 如果沒有 Rich Text Runs，則看整體的有效格式
+            const baseColor = cell.effectiveFormat?.textFormat?.foregroundColor;
+
+            // 如果沒有片段格式，則根據儲存格整體格式判斷
             if (!cell.textFormatRuns || cell.textFormatRuns.length === 0) {
-                const color = cell.effectiveFormat?.textFormat?.foregroundColor;
-                return isColorRed(color) ? `<span class="source-red">${text}</span>` : text;
+                return isColorRed(baseColor) ? `<span class="source-red">${text}</span>` : text;
             }
 
-            // 處理 Rich Text Runs (Google Sheets 將格式拆分為多個區段)
+            // 處理 textFormatRuns (處理儲存格內不同段落文字的格式)
             let html = "";
-            for (let i = 0; i < cell.textFormatRuns.length; i++) {
-                const run = cell.textFormatRuns[i];
-                const nextStartIndex = (i + 1 < cell.textFormatRuns.length) ? cell.textFormatRuns[i+1].startIndex : text.length;
-                const segment = text.substring(run.startIndex || 0, nextStartIndex);
-                const color = run.format?.foregroundColor;
+            let runs = cell.textFormatRuns;
+            
+            for (let i = 0; i < runs.length; i++) {
+                const run = runs[i];
+                const startIndex = run.startIndex || 0;
+                const nextStartIndex = (i + 1 < runs.length) ? runs[i+1].startIndex : text.length;
+                const segment = text.substring(startIndex, nextStartIndex);
+                
+                // 片段格式優先，無則繼承儲存格基礎格式
+                const color = run.format?.foregroundColor || baseColor;
 
                 if (isColorRed(color)) {
                     html += `<span class="source-red">${segment}</span>`;
@@ -353,14 +359,14 @@
             return html;
         }
 
-        // 核心偵測邏輯：智能標題偵測、資料對齊與色彩解析
+        // 核心偵測邏輯：智能偵測標題列並還原紅色字體
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
 
             try {
-                // 更新欄位抓取內容：增加 textFormatRuns 以取得儲存格內的片段顏色
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
+                // 加入 textFormatRuns 以取得儲存格內部的片段顏色
                 const fields = "sheets(properties/title,data(rowData(values(effectiveFormat/textFormat/foregroundColor,textFormatRuns,formattedValue))))";
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?${rangesParam}&fields=${encodeURIComponent(fields)}`;
                 
@@ -389,31 +395,25 @@
                         const rawHeaders = rows[headerIdx].values || [];
                         const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
-                        // 計算對應關係 (包含法人代碼與報價策略的強化比對)
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             
-                            // 1. 強力完全比對
                             let idx = cleanedHeaders.findIndex(h => h === target);
-                            // 2. 關鍵字模糊比對
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
-                            // 3. 互含備援
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
                             return idx;
                         });
 
-                        // 抓取資料
                         rows.slice(headerIdx + 1).forEach(row => {
                             if (!row.values || row.values.every(c => !c.formattedValue || c.formattedValue.trim() === "")) return;
                             
                             const normalizedRowData = mapping.map(idx => {
                                 if (idx === -1 || !row.values[idx]) return "";
-                                // 呼叫 cellToHtml 以解析 Rich Text 顏色
                                 return cellToHtml(row.values[idx]);
                             });
                             
@@ -479,11 +479,164 @@
             }).join('');
         }
 
-        // 僅執行不斷行保護，不再自動改色
         function wrapNowrapUnits(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
                 return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])/g, (match) => {
-                    return `<span class="nowrap
+                    return `<span class="nowrap-unit">${match}</span>`;
+                });
+            }).join('');
+        }
+
+        function boldMatches(text, term) {
+            if (!text || !term) return text;
+            if (term.trim() === '公司') return text;
+            const parts = text.split(/(<[^>]+>)/g);
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return parts.map(part => {
+                if (part && part.startsWith('<')) return part;
+                return part.replace(regex, '<b class="match-bold">$1</b>');
+            }).join('');
+        }
+
+        function renderTable(rows) {
+            const headerEl = document.getElementById('tableHeader');
+            const bodyEl = document.getElementById('tableBody');
+            const container = document.getElementById('table-container');
+            const countEl = document.getElementById('result-count');
+            headerEl.innerHTML = ''; bodyEl.innerHTML = '';
+
+            container.classList.remove('hidden');
+            countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${rows.length} 筆搜尋結果`;
+            countEl.classList.remove('hidden');
+
+            const headerRow = document.createElement('tr');
+            DISPLAY_CONFIG.forEach((config, index) => {
+                if (!columnVisibility[index]) return;
+                const th = document.createElement('th');
+                th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                if (config.widthClass) th.classList.add(config.widthClass);
+                if (config.isSN) th.className += " sn-cell";
+                th.textContent = config.display;
+                headerRow.appendChild(th);
+            });
+            headerEl.appendChild(headerRow);
+
+            rows.forEach((rowObj, rowIndex) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
+                DISPLAY_CONFIG.forEach((config, i) => {
+                    if (!columnVisibility[i]) return;
+                    const td = document.createElement('td');
+                    td.className = "px-6 py-5 border-b border-slate-200";
+                    
+                    let html = "";
+                    if (config.isSN) {
+                        td.className += " sn-cell opacity-60 font-bold";
+                        html = rowIndex + 1;
+                    } else if (config.isSource) {
+                        html = `<span class="region-badge">${rowObj.__source}</span>`;
+                    } else {
+                        // 這裡的 valHtml 已包含富文本顏色標籤
+                        let valHtml = rowObj.data[i] || "";
+                        
+                        if (config.isApproval) {
+                            const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
+                            if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
+                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
+                            else { valHtml = ""; }
+                        }
+
+                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
+                        if (autoWrapFields.includes(config.display)) {
+                            valHtml = valHtml.replace(/(\r\n|\n|\r)+/g, '\n').trim();
+                            valHtml = valHtml.replace(/\n/g, '<br>');
+                            valHtml = valHtml.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
+                        }
+
+                        if (config.widthClass) td.classList.add(config.widthClass);
+                        else if (valHtml.length > 25) td.classList.add('content-cell');
+                        else td.classList.add('whitespace-nowrap');
+
+                        let resultHtml = valHtml;
+                        const textOnlyForSearch = resultHtml.replace(/<[^>]+>/g, "").trim().toLowerCase();
+                        if (textOnlyForSearch !== lastSearchTerm.toLowerCase()) {
+                            resultHtml = boldMatches(resultHtml, lastSearchTerm); 
+                            resultHtml = highlightJobKeywords(resultHtml);
+                            resultHtml = highlightCurrencies(resultHtml); 
+                            resultHtml = wrapNowrapUnits(resultHtml); 
+                        }
+                        html = resultHtml;
+                    }
+                    td.innerHTML = html;
+                    tr.appendChild(td);
+                });
+                bodyEl.appendChild(tr);
+            });
+            setTimeout(updateScrollHints, 150);
+        }
+
+        function scrollTable(direction) {
+            const container = document.getElementById('table-container');
+            const scrollDist = container.clientWidth * 0.7; 
+            container.scrollBy({ left: direction === 'right' ? scrollDist : -scrollDist, behavior: 'smooth' });
+        }
+
+        function updateScrollHints() {
+            const container = document.getElementById('table-container');
+            const hintRight = document.getElementById('scroll-hint-right');
+            const hintLeft = document.getElementById('scroll-hint-left');
+            if (!container) return;
+            const isOverflowing = container.scrollWidth > (container.clientWidth + 10);
+            const isAtStart = container.scrollLeft <= 20;
+            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 30);
+            if (isOverflowing && !isAtEnd) hintRight.classList.add('show'); else hintRight.classList.remove('show');
+            if (isOverflowing && !isAtStart) hintLeft.classList.add('show'); else hintLeft.classList.remove('show');
+        }
+
+        document.getElementById('table-container').onscroll = updateScrollHints;
+        window.onresize = updateScrollHints;
+
+        function performSearch(skipLoading = false) {
+            const term = document.getElementById('searchInput').value.trim();
+            lastSearchTerm = term;
+            if (allMergedData.length === 0) return;
+            if (!term) {
+                document.getElementById('table-container').classList.add('hidden');
+                document.getElementById('result-count').classList.add('hidden');
+                return;
+            }
+
+            const loadingEl = document.getElementById('loading');
+            if (!skipLoading) loadingEl.classList.remove('hidden');
+
+            const searchAction = () => {
+                currentRows = allMergedData.filter(rowObj => {
+                    return rowObj.__raw.some(cell => (cell || "").toString().toLowerCase().includes(term.toLowerCase()));
+                });
+                
+                loadingEl.classList.add('hidden');
+                if (currentRows.length === 0) {
+                    document.getElementById('table-container').classList.add('hidden');
+                    document.getElementById('noResults').classList.remove('hidden');
+                } else {
+                    document.getElementById('noResults').classList.add('hidden');
+                    renderTable(currentRows);
+                }
+            };
+
+            if (skipLoading) searchAction(); else setTimeout(searchAction, 400); 
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            if (!e.target.value.trim()) {
+                document.getElementById('table-container').classList.add('hidden');
+                document.getElementById('result-count').classList.add('hidden');
+                document.getElementById('noResults').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

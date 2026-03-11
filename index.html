@@ -30,7 +30,7 @@
             max-width: 550px;
             white-space: normal !important;
             word-break: break-all;
-            line-height: 1.7;
+            line-height: 1.5; /* 優化：稍微縮窄行高，增加緊湊感 */
             vertical-align: top;
         }
 
@@ -89,8 +89,8 @@
         .highlight-num {
             font-weight: 700;
             color: inherit;
-            white-space: nowrap !important; /* 公式絕對不換行 */
-            display: inline-block; /* 確保 nowrap 生效且排版穩定 */
+            white-space: nowrap !important;
+            display: inline-block;
         }
         
         /* 搜尋詞標註：僅加粗 */
@@ -262,7 +262,7 @@
                 </div>
             </div>
 
-            <!-- 欄位顯示控制區 -->
+            <!-- 欄位控制區 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -291,7 +291,7 @@
             </div>
             
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-slate-200 shadow-inner text-slate-400">
-                <h3 class="text-sm font-bold uppercase tracking-widest">查無相符資料</h3>
+                <h3 class="text-sm font-bold uppercase tracking-widest">查對不到相符資料</h3>
             </div>
         </div>
     </div>
@@ -312,23 +312,23 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 核心規格定義與關鍵字偵測
+        // 核心規格定義與關鍵字偵測優化
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
             { original: "法人代碼", display: "法人代碼", searchKeys: ["法人", "代碼", "CODE"] },
-            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業", "公司", "戶名"] },
-            { original: "主要服務單位", display: "服務單位", searchKeys: ["單位", "部門"] },
-            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["業務"] },
-            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["核准", "是否核准"] }, 
+            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "企業同行", "公司"] },
+            { original: "主要服務單位", display: "服務單位", searchKeys: ["服務單位", "單位"] },
+            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務"] },
+            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票", "改票", "流程"] },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票", "AIR", "政策"] },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL", "預算", "住宿"] },
-            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價", "策略"] },
-            { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款", "PAYMENT"] },
-            { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉", "開立"] },
-            { original: "注意事項", display: "注意事項", searchKeys: ["注意", "備註", "NOTE"] },
-            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["時間", "更新", "UPDATE"] }
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR"] },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL"] },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "報價"] },
+            { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款方式", "付款"] },
+            { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉"] },
+            { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註"] },
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] }
         ];
 
         let allMergedData = []; 
@@ -362,7 +362,7 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 資料抓取與規格化
+        // 優化：核心資料抓取與標題比對引擎
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -382,6 +382,7 @@
                         const rows = vr.values;
                         if (!rows || rows.length < 2) return;
 
+                        // 徹底清洗原始標題，解決 image_7af055.png 中出現的標題內換行問題
                         const rawHeaders = rows[0] || [];
                         const cleanedHeaders = rawHeaders.map(h => (h || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
@@ -389,10 +390,15 @@
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             
+                            // 1. 強力完全比對
                             let idx = cleanedHeaders.findIndex(h => h === target);
+                            
+                            // 2. 備援：關鍵字模糊比對
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
+                            
+                            // 3. 終極比對：內容包含比對
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
@@ -413,7 +419,7 @@
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
-            } catch (err) { console.error("同步出錯:", err); } 
+            } catch (err) { console.error("資料獲取出錯:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
@@ -464,13 +470,11 @@
             }).join('');
         }
 
-        // 核心優化：智能偵測數字與公式，並套用「不換行」樣式
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                // 正則強化：支援帶有小數點的公式（如 *1.03）與百分比（如 +5%），確保其包裹在 nowrap 的 span 中
                 return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pDec, pList, pCnList, pNum, pCnNum) => {
                     if (pFormula) return `<span class="highlight-num">${match}</span>`; 
                     if (pList) {
@@ -541,13 +545,17 @@
                             else { val = ""; }
                         }
 
-                        // 自動換行與標記處理
+                        // 優化：智能處理換行，COLLAPSE 冗餘空白列
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         let content = val;
                         if (autoWrapFields.includes(config.display)) {
+                            // 修正：COLLAPSE 多個換行為單一換行，並轉為 <br>
+                            content = content.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             content = content.replace(/\n/g, '<br>');
-                            content = content.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            content = content.replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
+                            
+                            // 優化：針對列表符號換行，但避免重複換行
+                            content = content.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
+                            content = content.replace(/(?<!<br>|^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
                         }
 
                         if (config.widthClass) td.classList.add(config.widthClass);

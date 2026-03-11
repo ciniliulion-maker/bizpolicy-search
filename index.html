@@ -41,7 +41,7 @@
             max-width: 10em;
             white-space: normal !important;
         }
-        /* 更新：新增 12 字元寬度樣式 */
+        /* 12 字元寬度樣式 */
         .w-12-char {
             width: 12em;
             min-width: 12em;
@@ -98,6 +98,12 @@
             color: inherit;
             white-space: nowrap !important;
             display: inline-block;
+        }
+        
+        /* 搜尋詞標註：僅加粗 */
+        .match-bold {
+            font-weight: 800;
+            color: inherit;
         }
         
         /* 幣別高亮樣式：特粗體 */
@@ -219,7 +225,7 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢</h1>
-            <p id="sub-title" class="text-slate-400 font-medium text-sm italic">整合全台六大區域分頁即時數據</p>
+            <p id="sub-title" class="text-slate-400 font-medium text-sm italic">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
         <!-- 登入介面 -->
@@ -264,8 +270,8 @@
 
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
-                    <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">開啟全部</button>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
+                    <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
                 </div>
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
                     <span class="text-slate-300 text-xs italic">載入中...</span>
@@ -322,7 +328,7 @@
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR", "機票差旅"] },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL", "預算"] },
             { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "報價政策", "策略", "政策", "報價"] },
-            { original: "付款方式", display: "付款", widthClass: "w-12-char", searchKeys: ["付款方式", "付款", "PAYMENT"] }, // 更新：欄寬設為 12 字元
+            { original: "付款方式", display: "付款", widthClass: "w-12-char", searchKeys: ["付款方式", "付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註", "NOTE"] },
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "更新日期", "時間", "日期"] }

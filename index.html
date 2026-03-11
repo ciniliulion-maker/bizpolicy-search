@@ -275,7 +275,7 @@
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)',
-            'PCC' // 更新：修正 Sheet 名稱為 PCC
+            'PCC' // 專屬分頁
         ];
 
         const DISPLAY_CONFIG = [
@@ -372,7 +372,7 @@
                 if (data.sheets) {
                     data.sheets.forEach((sheet) => {
                         const title = sheet.properties.title;
-                        // 修正：區域標籤判斷，如果是 PCC 就標為 PCC
+                        // 修正：分頁標籤判斷，如果是 PCC 分頁則標為 PCC
                         const regionLabel = title.match(/\((.*?)\)/)?.[1] || (title === "PCC" ? "PCC" : "總部");
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
@@ -425,13 +425,13 @@
             finally { loadingEl.classList.add('hidden'); }
         }
 
-        // PCC 專屬搜尋功能
+        // PCC 專屬搜尋功能：顯示 [各站 Sabre PCC] 與 [企業戶特殊PCC] 所在的 PCC 分頁內容
         function searchPCC() {
             const input = document.getElementById('searchInput');
             input.value = "PCC";
             lastSearchTerm = "PCC";
             
-            // 篩選來源為「PCC」分頁的資料
+            // 篩選來源為「PCC」分頁的所有資料
             const results = allMergedData.filter(rowObj => rowObj.__source === 'PCC');
             
             document.getElementById('noResults').classList.add('hidden');

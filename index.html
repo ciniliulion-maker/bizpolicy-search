@@ -9,7 +9,7 @@
     <!-- Google 身份驗證 SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
         body {
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
@@ -97,6 +97,12 @@
             color: inherit;
         }
         
+        /* 幣別高亮樣式：特粗體 */
+        .currency-bold {
+            font-weight: 900 !important;
+            color: #0f172a; /* Slate-900 */
+        }
+        
         /* 職務藍色系高亮 */
         .job-keyword {
             color: #1e3a8a; 
@@ -145,7 +151,7 @@
             color: #94a3b8;
         }
 
-        /* 導航提示按鈕：藍色底 */
+        /* 導航提示按鈕 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
@@ -263,6 +269,7 @@
                 </div>
             </div>
 
+            <!-- 加載與筆數 -->
             <div id="loading" class="flex flex-col items-center justify-center py-24 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
@@ -285,7 +292,7 @@
         </div>
     </div>
 
-    <!-- 導航提示 -->
+    <!-- 左右導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
@@ -301,7 +308,7 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 核心規格定義與關鍵字偵測優化：解決資料抓取為空的核心
+        // 核心規格定義與關鍵字偵測優化
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
@@ -312,8 +319,8 @@
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["核准", "是否核准"] }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票", "改票", "流程"] },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票", "AIR", "政策"] },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL", "住宿"] },
-            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價", "報價策略"] },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL", "預算", "住宿"] },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價", "策略"] },
             { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", searchKeys: ["代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意", "備註", "NOTE"] },
@@ -351,7 +358,7 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 核心修復邏輯：針對每個分頁獨立掃描欄位，解決錯位與名稱不符導致資料為空的問題
+        // 核心偵測邏輯：獨立欄位解析
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -371,51 +378,38 @@
                         const rows = vr.values;
                         if (!rows || rows.length < 2) return;
 
-                        // 徹底清理標題中的換行與不可見字元，並轉為大寫以增加匹配機率
                         const rawHeaders = rows[0] || [];
                         const cleanedHeaders = rawHeaders.map(h => (h || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
-                        // 為該分頁獨立計算對應關係
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
-                            
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             
-                            // 1. 精確比對 (完全一致)
                             let idx = cleanedHeaders.findIndex(h => h === target);
-                            
-                            // 2. 關鍵字包含比對 (如果精確比對失敗，檢查是否包含 searchKeys 中的任何一個)
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
-                            
-                            // 3. 互含比對：標題包含目標 或 目標包含標題
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
-                            
                             return idx;
                         });
 
-                        // 將資料規格化為統一結構
                         rows.slice(1).forEach(row => {
                             if (row.length === 0 || row.every(c => !c || c.toString().trim() === "")) return;
-                            
                             const normalizedRowData = mapping.map(idx => (idx !== -1 && row[idx] !== undefined) ? row[idx].toString() : "");
-                            
-                            const normalizedRow = {
+                            allMergedData.push({
                                 __source: regionLabel,
-                                __raw: row, // 保留原始列資料供搜尋使用
+                                __raw: row,
                                 data: normalizedRowData
-                            };
-                            allMergedData.push(normalizedRow);
+                            });
                         });
                     });
 
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
-            } catch (err) { console.error("資料同步出錯:", err); } 
+            } catch (err) { console.error("同步失敗:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
@@ -451,9 +445,11 @@
             if (currentRows.length > 0) renderTable(currentRows);
         }
 
+        // 優化：智能判斷幣別並套用特粗體
         function highlightCurrencies(text) {
             if (!text) return "";
-            const currencyRegex = /\b(USD|TWD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
+            // 包含 NTD 並擴展常用幣別
+            const currencyRegex = /\b(USD|TWD|NTD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
 
@@ -535,14 +531,12 @@
                     } else {
                         let val = rowObj.data[i] || "";
                         
-                        // 核准出差轉換邏輯
                         if (config.isApproval) {
                             if (val.includes("是")) { val = "Y"; td.classList.add('approval-y'); }
                             else if (val.includes("否")) { val = "N"; td.classList.add('text-center'); }
                             else { val = ""; }
                         }
 
-                        // 自動換行與標記處理
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         let content = val;
                         if (autoWrapFields.includes(config.display)) {
@@ -555,12 +549,12 @@
                         else if (content.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 標記邏輯
                         if (val.trim().toLowerCase() === lastSearchTerm.toLowerCase()) {
                             html = content;
                         } else {
                             html = boldMatches(content, lastSearchTerm); 
                             html = highlightJobKeywords(html);
+                            html = highlightCurrencies(html); // 處理幣別加粗
                             if (autoWrapFields.includes(config.display)) html = highlightNumbers(html);
                         }
                     }

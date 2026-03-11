@@ -196,25 +196,16 @@
         <div id="query-view" class="hidden">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
                 <div class="flex flex-col md:flex-row items-stretch gap-3">
-                    <div class="flex-1 relative flex flex-col gap-2">
-                        <div class="relative flex items-center">
-                            <span class="absolute left-4 text-slate-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </span>
-                            <input type="text" id="searchInput" 
-                                placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
-                                class="w-full pl-12 pr-4 py-4 bg-slate-100 rounded-xl border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-slate-500 text-slate-800 font-bold"
-                                onkeydown="if(event.key === 'Enter') performSearch()">
-                        </div>
-                        <!-- PCC 快捷按鈕 -->
-                        <div class="flex items-center gap-2 pl-2">
-                            <button onclick="searchPCC()" class="px-4 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-black transition-all border border-blue-100 shadow-sm">
-                                PCC
-                            </button>
-                            <span class="text-[10px] text-slate-300 italic">快捷查詢 PCC 分頁內容</span>
-                        </div>
+                    <div class="flex-1 relative flex items-center">
+                        <span class="absolute left-4 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input type="text" id="searchInput" 
+                            placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
+                            class="w-full pl-12 pr-4 py-4 bg-slate-100 rounded-xl border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-slate-500 text-slate-800 font-bold"
+                            onkeydown="if(event.key === 'Enter') performSearch()">
                     </div>
                     <button id="searchBtn" onclick="performSearch()" 
                         class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md h-[58px]">
@@ -268,8 +259,7 @@
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
-            '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)',
-            'PCC' // 加入 PCC 來源分頁
+            '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
         const DISPLAY_CONFIG = [
@@ -287,10 +277,7 @@
             { original: "付款方式", display: "付款", widthClass: "w-12-char", searchKeys: ["付款方式", "付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註"] },
-            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] },
-            // 新增 PCC 模式所需欄位 (15, 16)
-            { original: "各站 Sabre PCC", display: "各站 PCC", searchKeys: ["各站", "SABRE", "PCC"] },
-            { original: "企業戶特殊PCC", display: "特殊 PCC", searchKeys: ["企業戶", "特殊", "PCC"] }
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] }
         ];
 
         let allMergedData = []; 
@@ -369,7 +356,7 @@
                 if (data.sheets) {
                     data.sheets.forEach((sheet) => {
                         const title = sheet.properties.title;
-                        const regionLabel = title.match(/\((.*?)\)/)?.[1] || (title === "PCC" ? "PCC" : "總部");
+                        const regionLabel = title.match(/\((.*?)\)/)?.[1] || "總部";
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
 
@@ -377,7 +364,7 @@
                         for (let i = 0; i < Math.min(rows.length, 10); i++) {
                             const rowCells = rows[i].values || [];
                             const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
-                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼") || rowText.includes("PCC")) {
+                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
                                 headerIdx = i;
                                 break;
                             }
@@ -414,36 +401,11 @@
                         });
                     });
 
-                    // 預設除 PCC 相關欄位外全選
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
-                    columnVisibility[15] = false;
-                    columnVisibility[16] = false;
                     initColumnFilters();
                 }
             } catch (err) { console.error("同步失敗:", err); } 
             finally { loadingEl.classList.add('hidden'); }
-        }
-
-        // 核心功能：PCC 模式視圖切換
-        function searchPCC() {
-            const input = document.getElementById('searchInput');
-            input.value = "PCC";
-            lastSearchTerm = "PCC";
-            
-            // 智慧切換顯示欄位：僅顯示 序號(0), 區域(1), 各站PCC(15), 特殊PCC(16)
-            columnVisibility = columnVisibility.map((v, i) => [0, 1, 15, 16].includes(i));
-            
-            // 同步 UI 勾選狀態
-            const checkboxes = document.querySelectorAll('#column-filters input[type="checkbox"]');
-            checkboxes.forEach((cb, idx) => {
-                // 注意：Checkbox 列表是從 DISPLAY_CONFIG[2] 開始渲染的
-                cb.checked = columnVisibility[idx + 2];
-            });
-
-            const results = allMergedData.filter(rowObj => rowObj.__source === 'PCC');
-            
-            document.getElementById('noResults').classList.add('hidden');
-            renderTable(results);
         }
 
         function initColumnFilters() {
@@ -455,7 +417,7 @@
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.checked = columnVisibility[index];
+                checkbox.checked = true;
                 checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 flex-shrink-0";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
@@ -561,7 +523,7 @@
                             else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
                             else { valHtml = ""; }
                         }
-                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項", "各站 Sabre PCC", "企業戶特殊PCC"];
+                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             valHtml = valHtml.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             valHtml = valHtml.replace(/\n/g, '<br>');

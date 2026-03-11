@@ -66,12 +66,6 @@
             font-size: 12pt !important;
         }
 
-        /* 來源色彩同步：紅色字體樣式 */
-        .source-red {
-            color: #e11d48 !important;
-            font-weight: 800;
-        }
-
         /* 公式與數字保護樣式：強制不斷行 */
         .nowrap-unit {
             white-space: nowrap !important;
@@ -233,7 +227,7 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
-                    <button onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
+                    <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
                 </div>
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
                     <span class="text-slate-300 text-xs italic">載入中...</span>
@@ -275,7 +269,7 @@
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)',
-            'PCC' // 專屬分頁
+            'PCC' // 加入 PCC 來源分頁
         ];
 
         const DISPLAY_CONFIG = [
@@ -293,7 +287,10 @@
             { original: "付款方式", display: "付款", widthClass: "w-12-char", searchKeys: ["付款方式", "付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註"] },
-            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] }
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] },
+            // 新增 PCC 模式所需欄位 (15, 16)
+            { original: "各站 Sabre PCC", display: "各站 PCC", searchKeys: ["各站", "SABRE", "PCC"] },
+            { original: "企業戶特殊PCC", display: "特殊 PCC", searchKeys: ["企業戶", "特殊", "PCC"] }
         ];
 
         let allMergedData = []; 
@@ -372,7 +369,6 @@
                 if (data.sheets) {
                     data.sheets.forEach((sheet) => {
                         const title = sheet.properties.title;
-                        // 修正：分頁標籤判斷，如果是 PCC 分頁則標為 PCC
                         const regionLabel = title.match(/\((.*?)\)/)?.[1] || (title === "PCC" ? "PCC" : "總部");
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
@@ -381,7 +377,7 @@
                         for (let i = 0; i < Math.min(rows.length, 10); i++) {
                             const rowCells = rows[i].values || [];
                             const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
-                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
+                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼") || rowText.includes("PCC")) {
                                 headerIdx = i;
                                 break;
                             }
@@ -418,20 +414,32 @@
                         });
                     });
 
+                    // 預設除 PCC 相關欄位外全選
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
+                    columnVisibility[15] = false;
+                    columnVisibility[16] = false;
                     initColumnFilters();
                 }
             } catch (err) { console.error("同步失敗:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
-        // PCC 專屬搜尋功能：顯示 [各站 Sabre PCC] 與 [企業戶特殊PCC] 所在的 PCC 分頁內容
+        // 核心功能：PCC 模式視圖切換
         function searchPCC() {
             const input = document.getElementById('searchInput');
             input.value = "PCC";
             lastSearchTerm = "PCC";
             
-            // 篩選來源為「PCC」分頁的所有資料
+            // 智慧切換顯示欄位：僅顯示 序號(0), 區域(1), 各站PCC(15), 特殊PCC(16)
+            columnVisibility = columnVisibility.map((v, i) => [0, 1, 15, 16].includes(i));
+            
+            // 同步 UI 勾選狀態
+            const checkboxes = document.querySelectorAll('#column-filters input[type="checkbox"]');
+            checkboxes.forEach((cb, idx) => {
+                // 注意：Checkbox 列表是從 DISPLAY_CONFIG[2] 開始渲染的
+                cb.checked = columnVisibility[idx + 2];
+            });
+
             const results = allMergedData.filter(rowObj => rowObj.__source === 'PCC');
             
             document.getElementById('noResults').classList.add('hidden');
@@ -447,7 +455,7 @@
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.checked = true;
+                checkbox.checked = columnVisibility[index];
                 checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 flex-shrink-0";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
@@ -553,7 +561,7 @@
                             else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
                             else { valHtml = ""; }
                         }
-                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
+                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項", "各站 Sabre PCC", "企業戶特殊PCC"];
                         if (autoWrapFields.includes(config.display)) {
                             valHtml = valHtml.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             valHtml = valHtml.replace(/\n/g, '<br>');

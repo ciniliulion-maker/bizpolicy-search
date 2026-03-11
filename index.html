@@ -30,7 +30,7 @@
             max-width: 550px;
             white-space: normal !important;
             word-break: break-all;
-            line-height: 1.5;
+            line-height: 1.4; 
             vertical-align: top;
         }
 
@@ -85,18 +85,12 @@
             font-size: 12pt !important;
         }
 
-        /* 數字高亮樣式：防止公式斷行 */
+        /* 公式與數字高亮樣式：強制不換行 */
         .highlight-num {
             font-weight: 700;
             color: inherit;
             white-space: nowrap !important;
             display: inline-block;
-        }
-        
-        /* 搜尋詞標註：僅加粗 */
-        .match-bold {
-            font-weight: 800;
-            color: inherit;
         }
         
         /* 幣別高亮樣式：特粗體 */
@@ -155,7 +149,7 @@
             color: #94a3b8;
         }
 
-        /* 導航提示按鈕 */
+        /* 導航按鈕 */
         .scroll-hint-btn {
             position: fixed;
             bottom: 2rem;
@@ -185,7 +179,7 @@
             pointer-events: auto;
         }
 
-        /* Google 登入按鈕 - 圓弧造型 */
+        /* Google 登入按鈕 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
@@ -240,7 +234,6 @@
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
-            <!-- 搜尋區 -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
                 <div class="flex flex-col md:flex-row items-stretch gap-3">
                     <div class="flex-1 relative flex items-center">
@@ -262,7 +255,6 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -273,14 +265,12 @@
                 </div>
             </div>
 
-            <!-- 加載與筆數 -->
             <div id="loading" class="flex flex-col items-center justify-center py-24 hidden">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10 mb-4"></div>
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
 
-            <!-- 表格區域 -->
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
@@ -296,12 +286,12 @@
         </div>
     </div>
 
-    <!-- 左右導航提示 -->
+    <!-- 導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
-        更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+        更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
     <div id="scroll-hint-left" class="scroll-hint-btn" style="left: 2rem; right: auto;" onclick="scrollTable('left')">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg> 返回前面
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg> 返回前面
     </div>
 
     <script>
@@ -316,15 +306,15 @@
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
-            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人", "代碼", "CODE"] },
-            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "企業同行", "公司", "戶名"] },
-            { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位", "單位"] },
-            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "服務業務", "業務姓名"] },
-            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准", "SOP"] }, 
-            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "規範說明", "開票規範"] },
+            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "客戶代號", "CODE"] },
+            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "戶名", "企業同行"] },
+            { original: "主要服務單位", display: "服務單位", searchKeys: ["服務單位", "單位"] },
+            { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "業務"] },
+            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["核准", "是否需核准", "SOP"] }, 
+            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "開票規範", "流程說明"] },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR", "機票差旅"] },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL", "飯店預算"] },
-            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "報價政策", "報價", "策略", "政策"] },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL", "預算"] },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "報價政策", "策略", "政策", "報價"] },
             { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款方式", "付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註", "NOTE"] },
@@ -354,15 +344,13 @@
         }
 
         window.onload = initGoogleAuth;
-
         function signOut() { location.reload(); }
-
         function showQueryView() {
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 優化：核心資料抓取與標題比對引擎，修復報價與核准欄位消失問題
+        // 核心偵測邏輯：智能標題列搜尋與資料對齊
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -377,37 +365,50 @@
 
                 if (data.valueRanges) {
                     data.valueRanges.forEach((vr, sheetIdx) => {
-                        const sheetName = TARGET_SHEETS[sheetIdx];
-                        const regionLabel = sheetName.match(/\((.*?)\)/)?.[1] || "總部";
+                        const regionLabel = TARGET_SHEETS[sheetIdx].match(/\((.*?)\)/)?.[1] || "總部";
                         const rows = vr.values;
                         if (!rows || rows.length < 1) return;
 
-                        // 清洗標題，解決隱藏換行與全形空格
-                        const rawHeaders = rows[0] || [];
+                        // --- 智能標題列偵測 ---
+                        // 有時試算表前幾行是空白或標題文字，我們需要找到包含「企業」或「法人」關鍵字的那一行作為標題列
+                        let headerIdx = 0;
+                        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+                            const rowText = rows[i].join("");
+                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
+                                headerIdx = i;
+                                break;
+                            }
+                        }
+
+                        const rawHeaders = rows[headerIdx] || [];
                         const cleanedHeaders = rawHeaders.map(h => (h || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
+                        // 為該分頁計算對應關係
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             
-                            // 1. 強力精確比對
+                            // 1. 強力完全比對
                             let idx = cleanedHeaders.findIndex(h => h === target);
                             
-                            // 2. 備援：關鍵字匹配 (只要標題含其中一個關鍵字)
+                            // 2. 關鍵字模糊比對 (searchKeys)
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
                             
-                            // 3. 終極比對：內容互含
+                            // 3. 備援比對：互含比對
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
                             return idx;
                         });
 
-                        rows.slice(1).forEach(row => {
+                        // 從標題列的下一行開始抓取資料
+                        rows.slice(headerIdx + 1).forEach(row => {
                             if (row.length === 0 || row.every(c => !c || c.toString().trim() === "")) return;
+                            
                             const normalizedRowData = mapping.map(idx => (idx !== -1 && row[idx] !== undefined) ? row[idx].toString() : "");
+                            
                             allMergedData.push({
                                 __source: regionLabel,
                                 __raw: row,
@@ -419,7 +420,7 @@
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
-            } catch (err) { console.error("資料獲取出錯:", err); } 
+            } catch (err) { console.error("同步失敗:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
@@ -470,13 +471,11 @@
             }).join('');
         }
 
-        // 核心優化：智能保護公式不斷行，解決 *1.03 拆散問題
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                // 正則修正：精確捕捉包含小數點與符號的組合，並加入 nowrap 保護
                 return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pDec, pList, pCnList, pNum, pCnNum) => {
                     if (pFormula) return `<span class="highlight-num">${match}</span>`; 
                     if (pList) {
@@ -542,23 +541,19 @@
                         let val = rowObj.data[i] || "";
                         
                         if (config.isApproval) {
-                            if (val.trim().includes("是")) { val = "Y"; td.classList.add('approval-y'); }
-                            else if (val.trim().includes("否")) { val = "N"; td.classList.add('text-center'); }
+                            const trimmed = val.toString().trim();
+                            if (trimmed === "是" || trimmed === "Y") { val = "Y"; td.classList.add('approval-y'); }
+                            else if (trimmed === "否" || trimmed === "N") { val = "N"; td.classList.add('text-center'); }
                             else { val = ""; }
                         }
 
-                        // 優化：換行與保護邏輯
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         let content = val;
                         if (autoWrapFields.includes(config.display)) {
-                            // COLLAPSE 冗餘換行
                             content = content.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             content = content.replace(/\n/g, '<br>');
-                            
-                            // 項目符號換行 (排除公式標記後的數字)
                             content = content.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
-                            // 列表編號換行，但嚴格排除帶有符號的公式
-                            content = content.replace(/(?<!<br>|^)(?<![＊\*\+\-])(\d+[\.\)])/g, '<br>$1');
+                            content = content.replace(/(?<!<br>|^)(?<![＊\*\+\-\/])(\d+[\.\)])/g, '<br>$1');
                         }
 
                         if (config.widthClass) td.classList.add(config.widthClass);

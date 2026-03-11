@@ -77,6 +77,15 @@
             font-weight: 800;
             color: inherit;
         }
+
+        /* 完全一致時：標紅色底線，不加粗 */
+        .match-underline-red {
+            text-decoration: underline !important;
+            text-decoration-color: #e11d48 !important;
+            text-underline-offset: 3px;
+            font-weight: 400 !important;
+            color: inherit;
+        }
         
         /* 幣別高亮樣式：特粗體 */
         .currency-bold {
@@ -513,31 +522,40 @@
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
+                        
+                        // 提取純文字進行匹配判斷
+                        const textOnlyContent = valHtml.replace(/<[^>]+>/g, "").trim();
+
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
                             if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
                             else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
                             else { valHtml = ""; }
                         }
+
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             valHtml = valHtml.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             valHtml = valHtml.replace(/\n/g, '<br>');
                             valHtml = valHtml.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
                         }
+
                         if (config.widthClass) td.classList.add(config.widthClass);
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        let resultHtml = valHtml;
-                        const textOnlyForSearch = resultHtml.replace(/<[^>]+>/g, "").trim().toLowerCase();
-                        if (textOnlyForSearch !== lastSearchTerm.toLowerCase()) {
+                        // 標註高亮邏輯
+                        if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
+                            // 需求修正：當內容與搜尋詞一致時，標紅色底線，取消粗體
+                            html = `<span class="match-underline-red">${valHtml}</span>`;
+                        } else {
+                            let resultHtml = valHtml;
                             resultHtml = boldMatches(resultHtml, lastSearchTerm); 
                             resultHtml = highlightJobKeywords(resultHtml);
                             resultHtml = highlightCurrencies(resultHtml); 
                             resultHtml = wrapNowrapUnits(resultHtml); 
+                            html = resultHtml;
                         }
-                        html = resultHtml;
                     }
                     td.innerHTML = html;
                     tr.appendChild(td);

@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級，靠左對齊 */
+        /* 固定表頭樣式與 10pt 字級，預設靠左對齊 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -73,13 +73,13 @@
             display: inline-block;
         }
         
-        /* 更新：搜尋匹配標註 - 標示紅色底線，不改字色，不加粗 */
+        /* 搜尋匹配標註 - 標示紅色底線，不改字色，不加粗 */
         .match-highlight {
             text-decoration: underline !important;
-            text-decoration-color: #e11d48 !important; /* 底線標紅 */
-            text-underline-offset: 3px; /* 增加底線偏移量 */
-            font-weight: 400 !important; /* 不用粗體字 */
-            color: inherit !important; /* 維持原始字色，並非紅字 */
+            text-decoration-color: #e11d48 !important;
+            text-underline-offset: 3px;
+            font-weight: 400 !important;
+            color: inherit !important;
         }
         
         /* 幣別高亮樣式：特粗體 */
@@ -490,9 +490,10 @@
             
             currentRows = rows; 
 
+            // 1. 建立動態表頭：只建立被勾選的 th，後續 th 會自動遞補往前
             const headerRow = document.createElement('tr');
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (!columnVisibility[index]) return;
+                if (!columnVisibility[index]) return; // 若未核選，則不建立該欄位
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if (config.widthClass) th.classList.add(config.widthClass);
@@ -502,11 +503,12 @@
             });
             headerEl.appendChild(headerRow);
 
+            // 2. 建立動態資料列：只建立被勾選的 td
             rows.forEach((rowObj, rowIndex) => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
-                    if (!columnVisibility[i]) return;
+                    if (!columnVisibility[i]) return; // 若未核選，則不建立該儲存格，後續單元格自動遞補往前
                     const td = document.createElement('td');
                     td.className = "px-6 py-5 border-b border-slate-200";
                     
@@ -522,9 +524,13 @@
 
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
-                            if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
-                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; }
-                            else { valHtml = ""; }
+                            if (textOnly === "是" || textOnly === "Y") { 
+                                valHtml = "Y"; td.classList.add('approval-y'); 
+                            } else if (textOnly === "否" || textOnly === "N") { 
+                                valHtml = "N"; td.classList.add('text-center'); 
+                            } else { 
+                                valHtml = ""; 
+                            }
                         }
 
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
@@ -538,7 +544,6 @@
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 統一搜尋高亮邏輯：完全一致或部分包含均標紅色底線，維持原色，不加粗
                         if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
                             html = `<span class="match-highlight">${valHtml}</span>`;
                         } else {

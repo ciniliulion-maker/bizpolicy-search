@@ -85,10 +85,12 @@
             font-size: 12pt !important;
         }
 
-        /* 數字僅粗體，無顏色 */
+        /* 核心修正：數字高亮樣式，防止換行 */
         .highlight-num {
             font-weight: 700;
             color: inherit;
+            white-space: nowrap !important; /* 防止數字從符號處斷開 */
+            display: inline-block; /* 確保 nowrap 屬性生效 */
         }
         
         /* 搜尋詞標註：僅加粗 */
@@ -100,7 +102,9 @@
         /* 幣別高亮樣式：特粗體 */
         .currency-bold {
             font-weight: 900 !important;
-            color: #0f172a; /* Slate-900 */
+            color: #0f172a; 
+            white-space: nowrap;
+            display: inline-block;
         }
         
         /* 職務藍色系高亮 */
@@ -227,7 +231,7 @@
             <h2 class="text-xl font-bold text-slate-900 mb-2">權限驗證</h2>
             <p class="text-slate-500 mb-8 text-center px-10 text-sm">請使用具備試算表權限的 Google 帳號登入系統。</p>
             
-            <button id="auth-btn" onclick="handleAuthClick()" class="google-auth-btn group">
+            <button id="auth-btn" class="google-auth-btn group">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G">
                 <span>使用 Google 帳號登入</span>
             </button>
@@ -258,7 +262,7 @@
                 </div>
             </div>
 
-            <!-- 欄位控制區：Grid 佈局 -->
+            <!-- 欄位顯示控制區 -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制</h3>
@@ -308,7 +312,7 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 核心規格定義與關鍵字偵測優化
+        // 核心規格定義與關鍵字偵測
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
@@ -322,7 +326,7 @@
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店", "酒店", "HOTEL", "預算", "住宿"] },
             { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價", "策略"] },
             { original: "付款方式", display: "付款", widthClass: "w-10-char", searchKeys: ["付款", "PAYMENT"] },
-            { original: "代轉開立", display: "代轉", searchKeys: ["代轉", "開立"] },
+            { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉", "開立"] },
             { original: "注意事項", display: "注意事項", searchKeys: ["注意", "備註", "NOTE"] },
             { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["時間", "更新", "UPDATE"] }
         ];
@@ -358,7 +362,7 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 核心偵測邏輯：獨立欄位解析
+        // 資料抓取與規格化
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -409,7 +413,7 @@
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
-            } catch (err) { console.error("同步失敗:", err); } 
+            } catch (err) { console.error("同步出錯:", err); } 
             finally { loadingEl.classList.add('hidden'); }
         }
 
@@ -445,10 +449,8 @@
             if (currentRows.length > 0) renderTable(currentRows);
         }
 
-        // 優化：智能判斷幣別並套用特粗體
         function highlightCurrencies(text) {
             if (!text) return "";
-            // 包含 NTD 並擴展常用幣別
             const currencyRegex = /\b(USD|TWD|NTD|HKD|JPY|EUR|CNY|RMB|SGD|AUD|GBP|CAD|CHF)\b/g;
             return text.replace(currencyRegex, '<span class="currency-bold">$1</span>');
         }
@@ -462,19 +464,22 @@
             }).join('');
         }
 
+        // 核心優化：智能偵測數字與公式，並套用「不換行」樣式
         function highlightNumbers(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                return part.replace(/(\*\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pStar, p1, p2, p3, p4) => {
-                    if (pStar) return `<span class="highlight-num">${match}</span>`; 
-                    if (p1) {
-                        const val = parseInt(p1.replace(/[^\d]/g, ''));
+                // 加入對「+」符號後接數字的完整匹配，並將其包裹在不換行的 span 中
+                return part.replace(/([\*\+]\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pList, pCnList, pNum, pCnNum) => {
+                    // pFormula: 匹配 *數字 或 +數字
+                    if (pFormula) return `<span class="highlight-num">${match}</span>`; 
+                    if (pList) {
+                        const val = parseInt(pList.replace(/[^\d]/g, ''));
                         if (val >= 100) return `<span class="highlight-num">${match}</span>`; 
                         return match; 
                     }
-                    if (p2) return match; 
+                    if (pCnList) return match; 
                     return `<span class="highlight-num">${match}</span>`;
                 });
             }).join('');
@@ -537,11 +542,13 @@
                             else { val = ""; }
                         }
 
+                        // 自動換行與標記處理
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         let content = val;
                         if (autoWrapFields.includes(config.display)) {
                             content = content.replace(/\n/g, '<br>');
                             content = content.replace(/(?!^)([●■◆・])/g, '<br>$1');
+                            // 這裡維持邏輯：排除 * 或 + 後面的數字，不讓它們在自動換行邏輯中被插入 <br>
                             content = content.replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
                         }
 
@@ -554,7 +561,8 @@
                         } else {
                             html = boldMatches(content, lastSearchTerm); 
                             html = highlightJobKeywords(html);
-                            html = highlightCurrencies(html); // 處理幣別加粗
+                            html = highlightCurrencies(html); 
+                            // 在這裡呼叫 highlightNumbers，裡面已經包含了 nowrap 的處理
                             if (autoWrapFields.includes(config.display)) html = highlightNumbers(html);
                         }
                     }

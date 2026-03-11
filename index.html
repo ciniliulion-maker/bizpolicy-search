@@ -85,12 +85,12 @@
             font-size: 12pt !important;
         }
 
-        /* 核心修正：數字高亮樣式，防止換行 */
+        /* 核心修正：數字高亮樣式，強制不換行 */
         .highlight-num {
             font-weight: 700;
             color: inherit;
-            white-space: nowrap !important; /* 防止數字從符號處斷開 */
-            display: inline-block; /* 確保 nowrap 屬性生效 */
+            white-space: nowrap !important; /* 公式絕對不換行 */
+            display: inline-block; /* 確保 nowrap 生效且排版穩定 */
         }
         
         /* 搜尋詞標註：僅加粗 */
@@ -470,9 +470,8 @@
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                // 加入對「+」符號後接數字的完整匹配，並將其包裹在不換行的 span 中
-                return part.replace(/([\*\+]\d+)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pList, pCnList, pNum, pCnNum) => {
-                    // pFormula: 匹配 *數字 或 +數字
+                // 正則強化：支援帶有小數點的公式（如 *1.03）與百分比（如 +5%），確保其包裹在 nowrap 的 span 中
+                return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pDec, pList, pCnList, pNum, pCnNum) => {
                     if (pFormula) return `<span class="highlight-num">${match}</span>`; 
                     if (pList) {
                         const val = parseInt(pList.replace(/[^\d]/g, ''));
@@ -548,7 +547,6 @@
                         if (autoWrapFields.includes(config.display)) {
                             content = content.replace(/\n/g, '<br>');
                             content = content.replace(/(?!^)([●■◆・])/g, '<br>$1');
-                            // 這裡維持邏輯：排除 * 或 + 後面的數字，不讓它們在自動換行邏輯中被插入 <br>
                             content = content.replace(/(?!^)(?<![＊\*\+])(\d+[\.\)])/g, '<br>$1');
                         }
 
@@ -562,7 +560,6 @@
                             html = boldMatches(content, lastSearchTerm); 
                             html = highlightJobKeywords(html);
                             html = highlightCurrencies(html); 
-                            // 在這裡呼叫 highlightNumbers，裡面已經包含了 nowrap 的處理
                             if (autoWrapFields.includes(config.display)) html = highlightNumbers(html);
                         }
                     }

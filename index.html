@@ -277,7 +277,7 @@
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)',
-            'PCC' // 指定分頁名稱為 PCC
+            '各站PCC' // 指定讀取各站PCC分頁
         ];
 
         const DISPLAY_CONFIG = [
@@ -383,11 +383,12 @@
                         if (!rows || rows.length < 1) return;
 
                         // PCC 內容特殊解析與清洗
-                        if (title === "PCC" || title.includes("各站PCC")) {
-                            const headText = (rows[0].values || []).map(c => (c.formattedValue || "").replace(/[\s\n\r\t]/g, ""));
+                        if (title.includes("PCC")) {
+                            const headCells = rows[0].values || [];
+                            const headText = headCells.map(c => (c.formattedValue || "").replace(/[\s\n\r\t]/g, ""));
                             const idxRegion = headText.findIndex(t => t.includes("區域"));
-                            const idxSabre = headText.findIndex(t => t.includes("SabrePCC"));
-                            const idxSpecial = headText.findIndex(t => t.includes("特殊PCC"));
+                            const idxSabre = headText.findIndex(t => t.includes("SabrePCC") || t.includes("Sabre"));
+                            const idxSpecial = headText.findIndex(t => t.includes("特殊PCC") || t.includes("特殊"));
 
                             rows.slice(1).forEach(r => {
                                 const cells = r.values || [];
@@ -397,15 +398,16 @@
                                 
                                 if (region) {
                                     if (sabre) {
-                                        let cleaned = sabre.replace("跨站新訂位時需切PCC", "").trim();
+                                        let cleaned = sabre.replace(/跨站新訂位時需切PCC/g, "").trim();
                                         if (cleaned) sabrePccArray.push(`${region} ${cleaned}`);
                                     }
                                     if (special) {
-                                        let cleaned = special.replace("跨站新訂位時需切PCC", "").trim();
+                                        let cleaned = special.replace(/跨站新訂位時需切PCC/g, "").trim();
                                         if (cleaned) specialPccArray.push(`${region} ${cleaned}`);
                                     }
                                 }
                             });
+                            // 格式化為：台北 D628|桃園 NO18|
                             sabrePccList = sabrePccArray.join("|") + (sabrePccArray.length > 0 ? "|" : "");
                             specialPccList = specialPccArray.join("|") + (specialPccArray.length > 0 ? "|" : "");
                             return;
@@ -443,12 +445,12 @@
                         });
                     });
 
-                    // 同步完資料後更新 PCC 顯示區
+                    // 更新 PCC 顯示文字
                     const sabreEl = document.getElementById('sabre-pcc-text');
                     const specialEl = document.getElementById('special-pcc-text');
                     if (sabrePccList || specialPccList) {
-                        sabreEl.textContent = sabrePccList || "尚未設定資料";
-                        specialEl.textContent = specialPccList || "尚未設定資料";
+                        sabreEl.textContent = sabrePccList || "尚未設定";
+                        specialEl.textContent = specialPccList || "尚未設定";
                     }
 
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
@@ -533,20 +535,12 @@
             const container = document.getElementById('table-container');
             const countEl = document.getElementById('result-count');
             const summaryBar = document.getElementById('result-summary-bar');
-            const pccPanel = document.getElementById('pcc-info-panel');
             
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
             container.classList.remove('hidden');
             summaryBar.classList.remove('hidden');
             
             countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${rows.length} 筆搜尋結果`;
-            
-            // 如果有 PCC 資訊則顯示
-            if (sabrePccList || specialPccList) {
-                pccPanel.classList.remove('invisible');
-            } else {
-                pccPanel.classList.add('invisible');
-            }
             
             currentRows = rows; 
 

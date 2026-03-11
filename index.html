@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級 */
+        /* 固定表頭樣式與 10pt 字級，改為置中 (ZY) */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -50,6 +50,7 @@
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
             font-size: 10pt !important;
+            text-align: center !important; /* 置中標題 */
         }
 
         #table-container {
@@ -498,7 +499,8 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                // 更新：欄位標題改為 ZY (置中)
+                th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
@@ -512,7 +514,8 @@
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
-                    td.className = "px-6 py-5 border-b border-slate-200";
+                    // 更新：搜尋結果內容改為 ZY (置中)
+                    td.className = "px-6 py-5 border-b border-slate-200 text-center";
                     
                     let html = "";
                     if (config.isSN) {
@@ -522,14 +525,12 @@
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
-                        
-                        // 提取純文字進行匹配判斷
                         const textOnlyContent = valHtml.replace(/<[^>]+>/g, "").trim();
 
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
                             if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
-                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
+                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; /* td.classList.add('text-center') 已在上面統一處理 */ }
                             else { valHtml = ""; }
                         }
 
@@ -544,9 +545,7 @@
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 標註高亮邏輯
                         if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
-                            // 需求修正：當內容與搜尋詞一致時，標紅色底線，取消粗體
                             html = `<span class="match-underline-red">${valHtml}</span>`;
                         } else {
                             let resultHtml = valHtml;

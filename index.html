@@ -35,37 +35,11 @@
         }
 
         /* 欄位寬度樣式定義 */
-        .w-10-char {
-            width: 10em;
-            min-width: 10em;
-            max-width: 10em;
-            white-space: normal !important;
-        }
-        /* 12 字元寬度樣式 */
-        .w-12-char {
-            width: 12em;
-            min-width: 12em;
-            max-width: 12em;
-            white-space: normal !important;
-        }
-        .w-15-char {
-            width: 15em;
-            min-width: 15em;
-            max-width: 15em;
-            white-space: normal !important;
-        }
-        .w-25-char {
-            width: 25em;
-            min-width: 25em;
-            max-width: 25em;
-            white-space: normal !important;
-        }
-        .w-30-char {
-            width: 30em;
-            min-width: 30em;
-            max-width: 30em;
-            white-space: normal !important;
-        }
+        .w-10-char { width: 10em; min-width: 10em; max-width: 10em; white-space: normal !important; }
+        .w-12-char { width: 12em; min-width: 12em; max-width: 12em; white-space: normal !important; }
+        .w-15-char { width: 15em; min-width: 15em; max-width: 15em; white-space: normal !important; }
+        .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
+        .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
         /* 固定表頭樣式與 10pt 字級 */
         .table-sticky-header th {
@@ -92,10 +66,14 @@
             font-size: 12pt !important;
         }
 
-        /* 核心修正：數字高亮恢復紅色粗體，並強制不斷行 */
-        .highlight-num {
+        /* 來源色彩同步：僅當來源為紅字時套用此樣式 */
+        .source-red {
+            color: #e11d48 !important;
             font-weight: 700;
-            color: #e11d48; /* 恢復紅色高亮 */
+        }
+
+        /* 公式與數字保護樣式：強制不斷行 */
+        .nowrap-unit {
             white-space: nowrap !important;
             display: inline-block;
         }
@@ -142,25 +120,11 @@
         }
 
         /* 捲軸美化 */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-            border: 2px solid #f1f5f9;
-        }
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
         
-        .sn-cell {
-            width: 60px;
-            text-align: center;
-            font-weight: 600;
-            color: #94a3b8;
-        }
+        .sn-cell { width: 60px; text-align: center; font-weight: 600; color: #94a3b8; }
 
         /* 導航按鈕 */
         .scroll-hint-btn {
@@ -186,11 +150,7 @@
             backdrop-filter: blur(4px);
         }
 
-        .scroll-hint-btn.show {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
+        .scroll-hint-btn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
         /* Google 登入按鈕 */
         .google-auth-btn {
@@ -209,15 +169,8 @@
             box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
         }
 
-        .google-auth-btn:hover {
-            background-color: #f8f9fa;
-        }
-
-        .google-auth-btn img {
-            width: 18px;
-            height: 18px;
-            margin-right: 12px;
-        }
+        .google-auth-btn:hover { background-color: #f8f9fa; }
+        .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -299,7 +252,7 @@
         </div>
     </div>
 
-    <!-- 左右導航提示 -->
+    <!-- 導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
@@ -315,23 +268,22 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 核心規格定義與關鍵字偵測優化
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
-            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "客戶代號", "CODE"] },
+            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "CODE"] },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "戶名", "企業同行"] },
             { original: "主要服務單位", display: "服務單位", searchKeys: ["服務單位", "單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "業務"] },
-            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准", "SOP"] }, 
-            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "開票規範", "流程說明"] },
-            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR", "機票差旅"] },
-            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL", "預算"] },
-            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "報價政策", "策略", "政策", "報價"] },
+            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
+            { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "規範說明"] },
+            { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR"] },
+            { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL"] },
+            { original: "報價策略", display: "報價策略", widthClass: "w-15-char", searchKeys: ["報價策略", "策略", "報價"] },
             { original: "付款方式", display: "付款", widthClass: "w-12-char", searchKeys: ["付款方式", "付款", "PAYMENT"] },
             { original: "代轉開立", display: "代轉", widthClass: "w-15-char", searchKeys: ["代轉開立", "代轉", "開立"] },
-            { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註", "NOTE"] },
-            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "更新日期", "時間", "日期"] }
+            { original: "注意事項", display: "注意事項", searchKeys: ["注意事項", "注意", "備註"] },
+            { original: "更新時間 (可直接打上2/12會自動加上年份)", display: "更新時間", searchKeys: ["更新時間", "日期"] }
         ];
 
         let allMergedData = []; 
@@ -363,67 +315,74 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 核心偵測邏輯：智能標題列搜尋與資料對齊
+        // 核心偵測邏輯：智能偵測標題列並同步色彩屬性
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
 
             try {
+                // 更新：使用 spreadsheets.get 以獲取 effectiveFormat (色彩資訊)
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?${rangesParam}`;
+                const fields = "sheets(properties/title,data(rowData(values(effectiveFormat/textFormat/foregroundColor,formattedValue))))";
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?${rangesParam}&fields=${encodeURIComponent(fields)}`;
+                
                 const response = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
                 const data = await response.json();
                 
                 allMergedData = [];
 
-                if (data.valueRanges) {
-                    data.valueRanges.forEach((vr, sheetIdx) => {
-                        const regionLabel = TARGET_SHEETS[sheetIdx].match(/\((.*?)\)/)?.[1] || "總部";
-                        const rows = vr.values;
+                if (data.sheets) {
+                    data.sheets.forEach((sheet) => {
+                        const regionLabel = sheet.properties.title.match(/\((.*?)\)/)?.[1] || "總部";
+                        const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
 
                         // --- 智能標題列偵測 ---
                         let headerIdx = 0;
                         for (let i = 0; i < Math.min(rows.length, 5); i++) {
-                            const rowText = rows[i].join("");
+                            const rowCells = rows[i].values || [];
+                            const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
                             if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
                                 headerIdx = i;
                                 break;
                             }
                         }
 
-                        const rawHeaders = rows[headerIdx] || [];
-                        const cleanedHeaders = rawHeaders.map(h => (h || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
+                        const rawHeaders = rows[headerIdx].values || [];
+                        const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
-                        // 為該分頁計算對應關係
+                        // 計算對應關係
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
-                            
-                            // 1. 強力完全比對
                             let idx = cleanedHeaders.findIndex(h => h === target);
-                            
-                            // 2. 關鍵字模糊比對 (searchKeys)
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
-                            
-                            // 3. 備援比對：互含比對
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
                             return idx;
                         });
 
-                        // 從標題列的下一行開始抓取資料
+                        // 抓取資料並同步色彩
                         rows.slice(headerIdx + 1).forEach(row => {
-                            if (row.length === 0 || row.every(c => !c || c.toString().trim() === "")) return;
+                            if (!row.values || row.values.every(c => !c.formattedValue || c.formattedValue.trim() === "")) return;
                             
-                            const normalizedRowData = mapping.map(idx => (idx !== -1 && row[idx] !== undefined) ? row[idx].toString() : "");
+                            const normalizedRowData = mapping.map(idx => {
+                                if (idx === -1 || !row.values[idx]) return { val: "", isRed: false };
+                                const cell = row.values[idx];
+                                const val = cell.formattedValue || "";
+                                const color = cell.effectiveFormat?.textFormat?.foregroundColor;
+                                
+                                // 判斷是否為紅色：R 高於 0.7 且 GB 低於 0.5 (容錯範圍)
+                                const isRed = (color && (color.red || 0) > 0.7 && (color.green || 0) < 0.5 && (color.blue || 0) < 0.5);
+                                return { val, isRed };
+                            });
                             
                             allMergedData.push({
                                 __source: regionLabel,
-                                __raw: row,
+                                __raw: row.values.map(c => c.formattedValue || ""),
                                 data: normalizedRowData
                             });
                         });
@@ -483,21 +442,15 @@
             }).join('');
         }
 
-        function highlightNumbers(text) {
+        // 優化：純粹執行「不斷行 (Nowrap)」保護，不再自動標紅
+        function wrapNowrapUnits(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                // 正則強化：支援帶有符號的小數點公式（如 *1.03）與百分比（如 +5%）
-                return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])|(\d+)|([一二三四五六七八九十百千萬零]+)/g, (match, pFormula, pDec, pList, pCnList, pNum, pCnNum) => {
-                    if (pFormula) return `<span class="highlight-num">${match}</span>`; 
-                    if (pList) {
-                        const val = parseInt(pList.replace(/[^\d]/g, ''));
-                        if (val >= 100) return `<span class="highlight-num">${match}</span>`; 
-                        return match; 
-                    }
-                    if (pCnList) return match; 
-                    return `<span class="highlight-num">${match}</span>`;
+                // 針對公式與編號模式套用 nowrap，但不改顏色
+                return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])/g, (match) => {
+                    return `<span class="nowrap-unit">${match}</span>`;
                 });
             }).join('');
         }
@@ -551,7 +504,8 @@
                     } else if (config.isSource) {
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
-                        let val = rowObj.data[i] || "";
+                        const cellData = rowObj.data[i] || { val: "", isRed: false };
+                        let val = cellData.val;
                         
                         if (config.isApproval) {
                             const trimmed = val.toString().trim();
@@ -560,26 +514,31 @@
                             else { val = ""; }
                         }
 
+                        // 處理換行壓縮
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         let content = val;
                         if (autoWrapFields.includes(config.display)) {
                             content = content.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             content = content.replace(/\n/g, '<br>');
                             content = content.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
-                            content = content.replace(/(?<!<br>|^)(?<![＊\*\+\-\/])(\d+[\.\)])/g, '<br>$1');
                         }
 
                         if (config.widthClass) td.classList.add(config.widthClass);
                         else if (content.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        if (val.trim().toLowerCase() === lastSearchTerm.toLowerCase()) {
-                            html = content;
-                        } else {
-                            html = boldMatches(content, lastSearchTerm); 
+                        // 標註與高亮邏輯
+                        html = content;
+                        if (val.trim().toLowerCase() !== lastSearchTerm.toLowerCase()) {
+                            html = boldMatches(html, lastSearchTerm); 
                             html = highlightJobKeywords(html);
                             html = highlightCurrencies(html); 
-                            if (autoWrapFields.includes(config.display)) html = highlightNumbers(html);
+                            html = wrapNowrapUnits(html); // 僅處理不斷行，不處理顏色
+                        }
+                        
+                        // 重要：如果原始資料是紅色的，則套用紅色樣式
+                        if (cellData.isRed) {
+                            html = `<span class="source-red">${html}</span>`;
                         }
                     }
                     td.innerHTML = html;

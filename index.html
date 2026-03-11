@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級，置中 (ZY) */
+        /* 固定表頭樣式與 10pt 字級，恢復為靠左對齊 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -50,7 +50,7 @@
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
             font-size: 10pt !important;
-            text-align: center !important; 
+            text-align: left !important; 
         }
 
         #table-container {
@@ -494,7 +494,8 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                // 恢復為靠左對齊
+                th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
@@ -508,7 +509,8 @@
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
-                    td.className = "px-6 py-5 border-b border-slate-200 text-center";
+                    // 恢復為預設對齊
+                    td.className = "px-6 py-5 border-b border-slate-200";
                     
                     let html = "";
                     if (config.isSN) {

@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級，改為置中 (ZY) */
+        /* 固定表頭樣式與 10pt 字級，置中 (ZY) */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -50,7 +50,7 @@
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
             font-size: 10pt !important;
-            text-align: center !important; /* 置中標題 */
+            text-align: center !important; 
         }
 
         #table-container {
@@ -73,14 +73,8 @@
             display: inline-block;
         }
         
-        /* 搜尋詞標註：僅加粗 */
-        .match-bold {
-            font-weight: 800;
-            color: inherit;
-        }
-
-        /* 完全一致時：標紅色底線，不加粗 */
-        .match-underline-red {
+        /* 搜尋匹配標註：標紅色底線，不加粗 */
+        .match-highlight {
             text-decoration: underline !important;
             text-decoration-color: #e11d48 !important;
             text-underline-offset: 3px;
@@ -470,14 +464,15 @@
             }).join('');
         }
 
-        function boldMatches(text, term) {
+        // 修改：標記搜尋結果為紅色底線，取消粗體
+        function highlightMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
             const parts = text.split(/(<[^>]+>)/g);
             const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                return part.replace(regex, '<b class="match-bold">$1</b>');
+                return part.replace(regex, '<span class="match-highlight">$1</span>');
             }).join('');
         }
 
@@ -499,7 +494,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return;
                 const th = document.createElement('th');
-                // 更新：欄位標題改為 ZY (置中)
                 th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
@@ -514,7 +508,6 @@
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return;
                     const td = document.createElement('td');
-                    // 更新：搜尋結果內容改為 ZY (置中)
                     td.className = "px-6 py-5 border-b border-slate-200 text-center";
                     
                     let html = "";
@@ -525,12 +518,11 @@
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
-                        const textOnlyContent = valHtml.replace(/<[^>]+>/g, "").trim();
-
+                        
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
                             if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
-                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; /* td.classList.add('text-center') 已在上面統一處理 */ }
+                            else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; }
                             else { valHtml = ""; }
                         }
 
@@ -545,16 +537,13 @@
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
-                            html = `<span class="match-underline-red">${valHtml}</span>`;
-                        } else {
-                            let resultHtml = valHtml;
-                            resultHtml = boldMatches(resultHtml, lastSearchTerm); 
-                            resultHtml = highlightJobKeywords(resultHtml);
-                            resultHtml = highlightCurrencies(resultHtml); 
-                            resultHtml = wrapNowrapUnits(resultHtml); 
-                            html = resultHtml;
-                        }
+                        // 統一搜尋高亮邏輯：僅紅色底線，不加粗
+                        let resultHtml = valHtml;
+                        resultHtml = highlightMatches(resultHtml, lastSearchTerm); 
+                        resultHtml = highlightJobKeywords(resultHtml);
+                        resultHtml = highlightCurrencies(resultHtml); 
+                        resultHtml = wrapNowrapUnits(resultHtml); 
+                        html = resultHtml;
                     }
                     td.innerHTML = html;
                     tr.appendChild(td);

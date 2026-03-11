@@ -269,7 +269,8 @@
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "戶名", "企業同行"] },
             { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位", "單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "業務"] },
-            { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
+            // 更新：欄位名稱修改為「需核准出差」
+            { original: "出差是否需經過核准", display: "需核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "規範說明"] },
             { original: "機票差旅政策 AIR (範例: 可訂艙等職級/條件、差旅偏好)", display: "機票政策", widthClass: "w-30-char", searchKeys: ["機票政策", "機票", "AIR"] },
             { original: "飯店費用預算/條件 HOTEL", display: "飯店政策", widthClass: "w-25-char", searchKeys: ["飯店費用", "飯店政策", "酒店", "HOTEL"] },
@@ -309,22 +310,30 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
+        // 智能顏色轉換：Google RGB (0-1) 轉 CSS RGB (0-255)
         function getCssColor(color) {
             if (!color) return null;
             const r = Math.round((color.red || 0) * 255);
             const g = Math.round((color.green || 0) * 255);
             const b = Math.round((color.blue || 0) * 255);
+            // 排除純黑色以維持預設樣式
             if (r === 0 && g === 0 && b === 0) return null;
             return `rgb(${r},${g},${b})`;
         }
 
+        // 核心色彩還原邏輯：解析富文本片段
         function cellToHtml(cell) {
             const text = cell.formattedValue || "";
             if (!text) return "";
+            
             const baseColor = getCssColor(cell.effectiveFormat?.textFormat?.foregroundColor);
+
+            // 若無片段格式，套用儲存格整體顏色
             if (!cell.textFormatRuns || cell.textFormatRuns.length === 0) {
                 return baseColor ? `<span style="color:${baseColor}; font-weight:800;">${text}</span>` : text;
             }
+
+            // 處理 Rich Text 片段 (textFormatRuns)
             let html = "";
             let runs = cell.textFormatRuns;
             for (let i = 0; i < runs.length; i++) {
@@ -332,13 +341,20 @@
                 const startIndex = run.startIndex || 0;
                 const nextStartIndex = (i + 1 < runs.length) ? runs[i+1].startIndex : text.length;
                 const segment = text.substring(startIndex, nextStartIndex);
+                
+                // 片段顏色優先，若無則繼承基礎色
                 const color = getCssColor(run.format?.foregroundColor) || baseColor;
-                if (color) { html += `<span style="color:${color}; font-weight:800;">${segment}</span>`; } 
-                else { html += segment; }
+
+                if (color) {
+                    html += `<span style="color:${color}; font-weight:800;">${segment}</span>`;
+                } else {
+                    html += segment;
+                }
             }
             return html;
         }
 
+        // 核心偵測邏輯：智能偵測標題列並還原原始字體色彩
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
@@ -355,11 +371,11 @@
 
                 if (data.sheets) {
                     data.sheets.forEach((sheet) => {
-                        const title = sheet.properties.title;
-                        const regionLabel = title.match(/\((.*?)\)/)?.[1] || "總部";
+                        const regionLabel = sheet.properties.title.match(/\((.*?)\)/)?.[1] || "總部";
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
 
+                        // --- 強化標題列偵測 (向上掃描 10 列) ---
                         let headerIdx = -1;
                         for (let i = 0; i < Math.min(rows.length, 10); i++) {
                             const rowCells = rows[i].values || [];
@@ -377,6 +393,7 @@
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
+                            
                             let idx = cleanedHeaders.findIndex(h => h === target);
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
@@ -389,10 +406,12 @@
 
                         rows.slice(headerIdx + 1).forEach(row => {
                             if (!row.values || row.values.every(c => !c.formattedValue || c.formattedValue.trim() === "")) return;
+                            
                             const normalizedRowData = mapping.map(idx => {
                                 if (idx === -1 || !row.values[idx]) return "";
                                 return cellToHtml(row.values[idx]);
                             });
+                            
                             allMergedData.push({
                                 __source: regionLabel,
                                 __raw: row.values.map(c => c.formattedValue || ""),
@@ -455,6 +474,7 @@
             }).join('');
         }
 
+        // 純保護不斷行，不干擾顏色
         function wrapNowrapUnits(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
@@ -517,18 +537,21 @@
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
+                        
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
                             if (textOnly === "是" || textOnly === "Y") { valHtml = "Y"; td.classList.add('approval-y'); }
                             else if (textOnly === "否" || textOnly === "N") { valHtml = "N"; td.classList.add('text-center'); }
                             else { valHtml = ""; }
                         }
+
                         const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
                         if (autoWrapFields.includes(config.display)) {
                             valHtml = valHtml.replace(/(\r\n|\n|\r)+/g, '\n').trim();
                             valHtml = valHtml.replace(/\n/g, '<br>');
                             valHtml = valHtml.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
                         }
+
                         if (config.widthClass) td.classList.add(config.widthClass);
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');

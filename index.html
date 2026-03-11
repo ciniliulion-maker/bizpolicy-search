@@ -73,11 +73,13 @@
             display: inline-block;
         }
         
-        /* 搜尋匹配標註：標示紅字，不加粗 */
+        /* 更新：搜尋匹配標註 - 標示紅色底線，不改字色，不加粗 */
         .match-highlight {
-            color: #e11d48 !important; /* 標紅字 */
+            text-decoration: underline !important;
+            text-decoration-color: #e11d48 !important; /* 底線標紅 */
+            text-underline-offset: 3px; /* 增加底線偏移量 */
             font-weight: 400 !important; /* 不用粗體字 */
-            text-decoration: none !important;
+            color: inherit !important; /* 維持原始字色，並非紅字 */
         }
         
         /* 幣別高亮樣式：特粗體 */
@@ -462,7 +464,7 @@
             }).join('');
         }
 
-        // 修改：將匹配文字標記為紅色字體，不加粗
+        // 修改：將匹配文字標記為紅色底線，不加粗，且維持原色
         function highlightMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
@@ -536,7 +538,7 @@
                         else if (valHtml.length > 25) td.classList.add('content-cell');
                         else td.classList.add('whitespace-nowrap');
 
-                        // 統一搜尋高亮邏輯：完全一致或部分包含均標紅字，不加粗
+                        // 統一搜尋高亮邏輯：完全一致或部分包含均標紅色底線，維持原色，不加粗
                         if (textOnlyContent.toLowerCase() === lastSearchTerm.toLowerCase() && lastSearchTerm !== "") {
                             html = `<span class="match-highlight">${valHtml}</span>`;
                         } else {

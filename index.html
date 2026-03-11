@@ -66,10 +66,10 @@
             font-size: 12pt !important;
         }
 
-        /* 來源色彩同步：僅當來源為紅字時套用此樣式 */
+        /* 來源色彩同步：紅色字體樣式 */
         .source-red {
             color: #e11d48 !important;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         /* 公式與數字保護樣式：強制不斷行 */
@@ -177,7 +177,7 @@
 
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
-            <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢</h1>
+            <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢系統</h1>
             <p id="sub-title" class="text-slate-400 font-medium text-sm italic">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
@@ -271,9 +271,9 @@
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
-            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "CODE"] },
+            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "客戶代號", "CODE"] },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "戶名", "企業同行"] },
-            { original: "主要服務單位", display: "服務單位", searchKeys: ["服務單位", "單位"] },
+            { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位", "單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "業務"] },
             { original: "出差是否需經過核准", display: "核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准", "是否需核准"] }, 
             { original: "開票&改票流程及規範說明", display: "開票流程", widthClass: "w-25-char", searchKeys: ["開票流程", "規範說明"] },
@@ -315,15 +315,53 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 核心偵測邏輯：智能偵測標題列並同步色彩屬性
+        // 輔助函式：判斷顏色是否為紅色
+        function isColorRed(color) {
+            if (!color) return false;
+            const r = color.red || 0;
+            const g = color.green || 0;
+            const b = color.blue || 0;
+            // 寬鬆判定：紅色成分明顯高於綠色與藍色
+            return (r > 0.7 && g < 0.5 && b < 0.5);
+        }
+
+        // 輔助函式：將儲存格內容與 Rich Text 轉換為帶色彩的 HTML
+        function cellToHtml(cell) {
+            const text = cell.formattedValue || "";
+            if (!text) return "";
+            
+            // 如果沒有 Rich Text Runs，則看整體的有效格式
+            if (!cell.textFormatRuns || cell.textFormatRuns.length === 0) {
+                const color = cell.effectiveFormat?.textFormat?.foregroundColor;
+                return isColorRed(color) ? `<span class="source-red">${text}</span>` : text;
+            }
+
+            // 處理 Rich Text Runs (Google Sheets 將格式拆分為多個區段)
+            let html = "";
+            for (let i = 0; i < cell.textFormatRuns.length; i++) {
+                const run = cell.textFormatRuns[i];
+                const nextStartIndex = (i + 1 < cell.textFormatRuns.length) ? cell.textFormatRuns[i+1].startIndex : text.length;
+                const segment = text.substring(run.startIndex || 0, nextStartIndex);
+                const color = run.format?.foregroundColor;
+
+                if (isColorRed(color)) {
+                    html += `<span class="source-red">${segment}</span>`;
+                } else {
+                    html += segment;
+                }
+            }
+            return html;
+        }
+
+        // 核心偵測邏輯：智能標題偵測、資料對齊與色彩解析
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
 
             try {
-                // 更新：使用 spreadsheets.get 以獲取 effectiveFormat (色彩資訊)
+                // 更新欄位抓取內容：增加 textFormatRuns 以取得儲存格內的片段顏色
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
-                const fields = "sheets(properties/title,data(rowData(values(effectiveFormat/textFormat/foregroundColor,formattedValue))))";
+                const fields = "sheets(properties/title,data(rowData(values(effectiveFormat/textFormat/foregroundColor,textFormatRuns,formattedValue))))";
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?${rangesParam}&fields=${encodeURIComponent(fields)}`;
                 
                 const response = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
@@ -342,7 +380,7 @@
                         for (let i = 0; i < Math.min(rows.length, 5); i++) {
                             const rowCells = rows[i].values || [];
                             const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
-                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
+                            if (rowText.includes("企業") || rowText.includes("法人代碼") || rowText.includes("代碼")) {
                                 headerIdx = i;
                                 break;
                             }
@@ -351,33 +389,32 @@
                         const rawHeaders = rows[headerIdx].values || [];
                         const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
-                        // 計算對應關係
+                        // 計算對應關係 (包含法人代碼與報價策略的強化比對)
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
+                            
+                            // 1. 強力完全比對
                             let idx = cleanedHeaders.findIndex(h => h === target);
+                            // 2. 關鍵字模糊比對
                             if (idx === -1 && config.searchKeys) {
                                 idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
                             }
+                            // 3. 互含備援
                             if (idx === -1) {
                                 idx = cleanedHeaders.findIndex(h => h !== "" && (h.includes(target) || target.includes(h)));
                             }
                             return idx;
                         });
 
-                        // 抓取資料並同步色彩
+                        // 抓取資料
                         rows.slice(headerIdx + 1).forEach(row => {
                             if (!row.values || row.values.every(c => !c.formattedValue || c.formattedValue.trim() === "")) return;
                             
                             const normalizedRowData = mapping.map(idx => {
-                                if (idx === -1 || !row.values[idx]) return { val: "", isRed: false };
-                                const cell = row.values[idx];
-                                const val = cell.formattedValue || "";
-                                const color = cell.effectiveFormat?.textFormat?.foregroundColor;
-                                
-                                // 判斷是否為紅色：R 高於 0.7 且 GB 低於 0.5 (容錯範圍)
-                                const isRed = (color && (color.red || 0) > 0.7 && (color.green || 0) < 0.5 && (color.blue || 0) < 0.5);
-                                return { val, isRed };
+                                if (idx === -1 || !row.values[idx]) return "";
+                                // 呼叫 cellToHtml 以解析 Rich Text 顏色
+                                return cellToHtml(row.values[idx]);
                             });
                             
                             allMergedData.push({
@@ -442,172 +479,11 @@
             }).join('');
         }
 
-        // 優化：純粹執行「不斷行 (Nowrap)」保護，不再自動標紅
+        // 僅執行不斷行保護，不再自動改色
         function wrapNowrapUnits(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
             return parts.map(part => {
                 if (part && part.startsWith('<')) return part;
-                // 針對公式與編號模式套用 nowrap，但不改顏色
                 return part.replace(/([\*\+]\d+(\.\d+)?%?)|(\d+[\.\)])|([一二三四五六七八九十]+[、\.])/g, (match) => {
-                    return `<span class="nowrap-unit">${match}</span>`;
-                });
-            }).join('');
-        }
-
-        function boldMatches(text, term) {
-            if (!text || !term) return text;
-            if (term.trim() === '公司') return text;
-            const parts = text.split(/(<[^>]+>)/g);
-            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            return parts.map(part => {
-                if (part && part.startsWith('<')) return part;
-                return part.replace(regex, '<b class="match-bold">$1</b>');
-            }).join('');
-        }
-
-        function renderTable(rows) {
-            const headerEl = document.getElementById('tableHeader');
-            const bodyEl = document.getElementById('tableBody');
-            const container = document.getElementById('table-container');
-            const countEl = document.getElementById('result-count');
-            headerEl.innerHTML = ''; bodyEl.innerHTML = '';
-
-            container.classList.remove('hidden');
-            countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${rows.length} 筆搜尋結果`;
-            countEl.classList.remove('hidden');
-
-            const headerRow = document.createElement('tr');
-            DISPLAY_CONFIG.forEach((config, index) => {
-                if (!columnVisibility[index]) return;
-                const th = document.createElement('th');
-                th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
-                if (config.widthClass) th.classList.add(config.widthClass);
-                if (config.isSN) th.className += " sn-cell";
-                th.textContent = config.display;
-                headerRow.appendChild(th);
-            });
-            headerEl.appendChild(headerRow);
-
-            rows.forEach((rowObj, rowIndex) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
-                DISPLAY_CONFIG.forEach((config, i) => {
-                    if (!columnVisibility[i]) return;
-                    const td = document.createElement('td');
-                    td.className = "px-6 py-5 border-b border-slate-200";
-                    
-                    let html = "";
-                    if (config.isSN) {
-                        td.className += " sn-cell opacity-60 font-bold";
-                        html = rowIndex + 1;
-                    } else if (config.isSource) {
-                        html = `<span class="region-badge">${rowObj.__source}</span>`;
-                    } else {
-                        const cellData = rowObj.data[i] || { val: "", isRed: false };
-                        let val = cellData.val;
-                        
-                        if (config.isApproval) {
-                            const trimmed = val.toString().trim();
-                            if (trimmed === "是" || trimmed === "Y") { val = "Y"; td.classList.add('approval-y'); }
-                            else if (trimmed === "否" || trimmed === "N") { val = "N"; td.classList.add('text-center'); }
-                            else { val = ""; }
-                        }
-
-                        // 處理換行壓縮
-                        const autoWrapFields = ["機票政策", "飯店政策", "報價策略", "開票流程", "注意事項"];
-                        let content = val;
-                        if (autoWrapFields.includes(config.display)) {
-                            content = content.replace(/(\r\n|\n|\r)+/g, '\n').trim();
-                            content = content.replace(/\n/g, '<br>');
-                            content = content.replace(/(?<!<br>|^)([●■◆・])/g, '<br>$1');
-                        }
-
-                        if (config.widthClass) td.classList.add(config.widthClass);
-                        else if (content.length > 25) td.classList.add('content-cell');
-                        else td.classList.add('whitespace-nowrap');
-
-                        // 標註與高亮邏輯
-                        html = content;
-                        if (val.trim().toLowerCase() !== lastSearchTerm.toLowerCase()) {
-                            html = boldMatches(html, lastSearchTerm); 
-                            html = highlightJobKeywords(html);
-                            html = highlightCurrencies(html); 
-                            html = wrapNowrapUnits(html); // 僅處理不斷行，不處理顏色
-                        }
-                        
-                        // 重要：如果原始資料是紅色的，則套用紅色樣式
-                        if (cellData.isRed) {
-                            html = `<span class="source-red">${html}</span>`;
-                        }
-                    }
-                    td.innerHTML = html;
-                    tr.appendChild(td);
-                });
-                bodyEl.appendChild(tr);
-            });
-            setTimeout(updateScrollHints, 150);
-        }
-
-        function scrollTable(direction) {
-            const container = document.getElementById('table-container');
-            const scrollDist = container.clientWidth * 0.7; 
-            container.scrollBy({ left: direction === 'right' ? scrollDist : -scrollDist, behavior: 'smooth' });
-        }
-
-        function updateScrollHints() {
-            const container = document.getElementById('table-container');
-            const hintRight = document.getElementById('scroll-hint-right');
-            const hintLeft = document.getElementById('scroll-hint-left');
-            if (!container) return;
-            const isOverflowing = container.scrollWidth > (container.clientWidth + 10);
-            const isAtStart = container.scrollLeft <= 20;
-            const isAtEnd = (container.scrollLeft + container.clientWidth) >= (container.scrollWidth - 30);
-            if (isOverflowing && !isAtEnd) hintRight.classList.add('show'); else hintRight.classList.remove('show');
-            if (isOverflowing && !isAtStart) hintLeft.classList.add('show'); else hintLeft.classList.remove('show');
-        }
-
-        document.getElementById('table-container').onscroll = updateScrollHints;
-        window.onresize = updateScrollHints;
-
-        function performSearch(skipLoading = false) {
-            const term = document.getElementById('searchInput').value.trim();
-            lastSearchTerm = term;
-            if (allMergedData.length === 0) return;
-            if (!term) {
-                document.getElementById('table-container').classList.add('hidden');
-                document.getElementById('result-count').classList.add('hidden');
-                return;
-            }
-
-            const loadingEl = document.getElementById('loading');
-            if (!skipLoading) loadingEl.classList.remove('hidden');
-
-            const searchAction = () => {
-                currentRows = allMergedData.filter(rowObj => {
-                    return rowObj.__raw.some(cell => (cell || "").toString().toLowerCase().includes(term.toLowerCase()));
-                });
-                
-                loadingEl.classList.add('hidden');
-                if (currentRows.length === 0) {
-                    document.getElementById('table-container').classList.add('hidden');
-                    document.getElementById('noResults').classList.remove('hidden');
-                } else {
-                    document.getElementById('noResults').classList.add('hidden');
-                    renderTable(currentRows);
-                }
-            };
-
-            if (skipLoading) searchAction(); else setTimeout(searchAction, 400); 
-        }
-
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            if (!e.target.value.trim()) {
-                document.getElementById('table-container').classList.add('hidden');
-                document.getElementById('result-count').classList.add('hidden');
-                document.getElementById('noResults').classList.add('hidden');
-            }
-        });
-    </script>
-</body>
-</html>
+                    return `<span class="nowrap

@@ -230,23 +230,7 @@
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
             
-            <!-- 搜尋筆數與 PCC 資訊整合區 -->
-            <div id="result-summary-bar" class="hidden flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-4">
-                <!-- 筆數標籤 -->
-                <div id="result-count" class="flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm self-start"></div>
-                
-                <!-- PCC 核心資訊 (兩列式呈現) -->
-                <div id="pcc-info-panel" class="flex-1 flex flex-col gap-1.5 border-l-2 border-blue-200 pl-4 py-0.5">
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <span class="text-[10px] font-black text-blue-600 whitespace-nowrap bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">各站 Sabre PCC</span>
-                        <div id="sabre-pcc-text" class="text-[11px] font-bold text-slate-500 tracking-tighter truncate"></div>
-                    </div>
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <span class="text-[10px] font-black text-slate-400 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">企業戶特殊PCC</span>
-                        <div id="special-pcc-text" class="text-[11px] font-bold text-slate-400 tracking-tighter truncate"></div>
-                    </div>
-                </div>
-            </div>
+            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
 
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
@@ -276,8 +260,7 @@
         const SPREADSHEET_ID = '1csWqYCN82PEoe27Nuz5KxY6uM_4Qb_UgBA-6Okooj2g';
         const TARGET_SHEETS = [
             '行政-合約管理(台北)', '行政-合約管理(桃園)', '行政-合約管理(新竹)', 
-            '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)',
-            '各站PCC' // 指定讀取各站PCC分頁
+            '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
         const DISPLAY_CONFIG = [
@@ -303,9 +286,6 @@
         let columnVisibility = []; 
         let lastSearchTerm = "";
         let accessToken = null;
-        
-        let sabrePccList = "";
-        let specialPccList = "";
 
         function initGoogleAuth() {
             if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
@@ -373,58 +353,28 @@
                 const data = await response.json();
                 
                 allMergedData = [];
-                let sabrePccArray = [];
-                let specialPccArray = [];
 
                 if (data.sheets) {
                     data.sheets.forEach((sheet) => {
                         const title = sheet.properties.title;
+                        const regionLabel = title.match(/\((.*?)\)/)?.[1] || "總部";
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
 
-                        // PCC 內容特殊解析與清洗
-                        if (title.includes("PCC")) {
-                            const headCells = rows[0].values || [];
-                            const headText = headCells.map(c => (c.formattedValue || "").replace(/[\s\n\r\t]/g, ""));
-                            const idxRegion = headText.findIndex(t => t.includes("區域"));
-                            const idxSabre = headText.findIndex(t => t.includes("SabrePCC") || t.includes("Sabre"));
-                            const idxSpecial = headText.findIndex(t => t.includes("特殊PCC") || t.includes("特殊"));
-
-                            rows.slice(1).forEach(r => {
-                                const cells = r.values || [];
-                                const region = (idxRegion !== -1 && cells[idxRegion]?.formattedValue) || "";
-                                const sabre = (idxSabre !== -1 && cells[idxSabre]?.formattedValue) || "";
-                                const special = (idxSpecial !== -1 && cells[idxSpecial]?.formattedValue) || "";
-                                
-                                if (region) {
-                                    if (sabre) {
-                                        let cleaned = sabre.replace(/跨站新訂位時需切PCC/g, "").trim();
-                                        if (cleaned) sabrePccArray.push(`${region} ${cleaned}`);
-                                    }
-                                    if (special) {
-                                        let cleaned = special.replace(/跨站新訂位時需切PCC/g, "").trim();
-                                        if (cleaned) specialPccArray.push(`${region} ${cleaned}`);
-                                    }
-                                }
-                            });
-                            // 格式化為：台北 D628|桃園 NO18|
-                            sabrePccList = sabrePccArray.join("|") + (sabrePccArray.length > 0 ? "|" : "");
-                            specialPccList = specialPccArray.join("|") + (specialPccArray.length > 0 ? "|" : "");
-                            return;
-                        }
-
-                        // 差旅政策資料處理
-                        const regionLabel = title.match(/\((.*?)\)/)?.[1] || "總部";
                         let headerIdx = -1;
                         for (let i = 0; i < Math.min(rows.length, 10); i++) {
-                            const rowText = (rows[i].values || []).map(c => (c.formattedValue || "")).join("");
+                            const rowCells = rows[i].values || [];
+                            const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
                             if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
-                                headerIdx = i; break;
+                                headerIdx = i;
+                                break;
                             }
                         }
                         if (headerIdx === -1) headerIdx = 0;
 
-                        const cleanedHeaders = (rows[headerIdx].values || []).map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
+                        const rawHeaders = rows[headerIdx].values || [];
+                        const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
+                        
                         const mapping = DISPLAY_CONFIG.map(config => {
                             if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
@@ -444,14 +394,6 @@
                             });
                         });
                     });
-
-                    // 更新 PCC 顯示文字
-                    const sabreEl = document.getElementById('sabre-pcc-text');
-                    const specialEl = document.getElementById('special-pcc-text');
-                    if (sabrePccList || specialPccList) {
-                        sabreEl.textContent = sabrePccList || "尚未設定";
-                        specialEl.textContent = specialPccList || "尚未設定";
-                    }
 
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
@@ -534,11 +476,10 @@
             const bodyEl = document.getElementById('tableBody');
             const container = document.getElementById('table-container');
             const countEl = document.getElementById('result-count');
-            const summaryBar = document.getElementById('result-summary-bar');
             
             headerEl.innerHTML = ''; bodyEl.innerHTML = '';
             container.classList.remove('hidden');
-            summaryBar.classList.remove('hidden');
+            countEl.classList.remove('hidden');
             
             countEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> 共 ${rows.length} 筆搜尋結果`;
             
@@ -633,7 +574,7 @@
             if (allMergedData.length === 0) return;
             if (!term) {
                 document.getElementById('table-container').classList.add('hidden');
-                document.getElementById('result-summary-bar').classList.add('hidden');
+                document.getElementById('result-count').classList.add('hidden');
                 return;
             }
             const loadingEl = document.getElementById('loading');
@@ -647,7 +588,7 @@
                 if (currentRows.length === 0) {
                     document.getElementById('table-container').classList.add('hidden');
                     document.getElementById('noResults').classList.remove('hidden');
-                    document.getElementById('result-summary-bar').classList.add('hidden');
+                    document.getElementById('result-count').classList.add('hidden');
                 } else {
                     document.getElementById('noResults').classList.add('hidden');
                     renderTable(currentRows);
@@ -659,7 +600,7 @@
         document.getElementById('searchInput').addEventListener('input', function(e) {
             if (!e.target.value.trim()) {
                 document.getElementById('table-container').classList.add('hidden');
-                document.getElementById('result-summary-bar').classList.add('hidden');
+                document.getElementById('result-count').classList.add('hidden');
                 document.getElementById('noResults').classList.add('hidden');
             }
         });

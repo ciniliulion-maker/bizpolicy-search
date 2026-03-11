@@ -66,12 +66,6 @@
             font-size: 12pt !important;
         }
 
-        /* 來源色彩同步：還原原始紅色字體 */
-        .source-red {
-            color: #e11d48 !important;
-            font-weight: 800; /* 紅色部分加粗更明顯 */
-        }
-
         /* 公式與數字保護樣式：強制不斷行 */
         .nowrap-unit {
             white-space: nowrap !important;
@@ -252,7 +246,7 @@
         </div>
     </div>
 
-    <!-- 導航提示 -->
+    <!-- 左右導航提示 -->
     <div id="scroll-hint-right" class="scroll-hint-btn" onclick="scrollTable('right')">
         更多資訊 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
     </div>
@@ -271,7 +265,7 @@
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
-            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "代號", "CLIENTID", "客戶代號", "CODE"] },
+            { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "法人", "代碼", "代號", "CLIENTID", "CODE"] },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "戶名", "企業同行"] },
             { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位", "單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務姓名", "業務"] },
@@ -315,43 +309,43 @@
             document.getElementById('query-view').classList.remove('hidden');
         }
 
-        // 輔助函式：優化判斷顏色是否為紅色
-        function isColorRed(color) {
-            if (!color) return false;
-            const r = color.red || 0;
-            const g = color.green || 0;
-            const b = color.blue || 0;
-            // 改進判定：只要紅色成份明顯高於綠、藍即可，解決深紅、淺紅的判定問題
-            return (r > 0.6 && r > g + 0.15 && r > b + 0.15);
+        // 智能顏色轉換：Google RGB (0-1) 轉 CSS RGB (0-255)
+        function getCssColor(color) {
+            if (!color) return null;
+            const r = Math.round((color.red || 0) * 255);
+            const g = Math.round((color.green || 0) * 255);
+            const b = Math.round((color.blue || 0) * 255);
+            // 排除純黑色以維持預設樣式
+            if (r === 0 && g === 0 && b === 0) return null;
+            return `rgb(${r},${g},${b})`;
         }
 
-        // 輔助函式：將儲存格內容與每一段富文本轉換為帶色彩的 HTML
+        // 核心色彩還原邏輯：解析富文本片段
         function cellToHtml(cell) {
             const text = cell.formattedValue || "";
             if (!text) return "";
             
-            const baseColor = cell.effectiveFormat?.textFormat?.foregroundColor;
+            const baseColor = getCssColor(cell.effectiveFormat?.textFormat?.foregroundColor);
 
-            // 如果沒有片段格式，則根據儲存格整體格式判斷
+            // 若無片段格式，套用儲存格整體顏色
             if (!cell.textFormatRuns || cell.textFormatRuns.length === 0) {
-                return isColorRed(baseColor) ? `<span class="source-red">${text}</span>` : text;
+                return baseColor ? `<span style="color:${baseColor}; font-weight:800;">${text}</span>` : text;
             }
 
-            // 處理 textFormatRuns (處理儲存格內不同段落文字的格式)
+            // 處理 Rich Text 片段 (textFormatRuns)
             let html = "";
             let runs = cell.textFormatRuns;
-            
             for (let i = 0; i < runs.length; i++) {
                 const run = runs[i];
                 const startIndex = run.startIndex || 0;
                 const nextStartIndex = (i + 1 < runs.length) ? runs[i+1].startIndex : text.length;
                 const segment = text.substring(startIndex, nextStartIndex);
                 
-                // 片段格式優先，無則繼承儲存格基礎格式
-                const color = run.format?.foregroundColor || baseColor;
+                // 片段顏色優先，若無則繼承基礎色
+                const color = getCssColor(run.format?.foregroundColor) || baseColor;
 
-                if (isColorRed(color)) {
-                    html += `<span class="source-red">${segment}</span>`;
+                if (color) {
+                    html += `<span style="color:${color}; font-weight:800;">${segment}</span>`;
                 } else {
                     html += segment;
                 }
@@ -359,14 +353,14 @@
             return html;
         }
 
-        // 核心偵測邏輯：智能偵測標題列並還原紅色字體
+        // 核心偵測邏輯：智能偵測標題列並還原原始字體色彩
         async function fetchSheetData() {
             const loadingEl = document.getElementById('loading');
             loadingEl.classList.remove('hidden');
 
             try {
                 const rangesParam = TARGET_SHEETS.map(s => `ranges=${encodeURIComponent(s + '!A1:Z2000')}`).join('&');
-                // 加入 textFormatRuns 以取得儲存格內部的片段顏色
+                // 抓取格式資訊與富文本片段色彩
                 const fields = "sheets(properties/title,data(rowData(values(effectiveFormat/textFormat/foregroundColor,textFormatRuns,formattedValue))))";
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?${rangesParam}&fields=${encodeURIComponent(fields)}`;
                 
@@ -381,16 +375,18 @@
                         const rows = sheet.data[0].rowData;
                         if (!rows || rows.length < 1) return;
 
-                        // --- 智能標題列偵測 ---
-                        let headerIdx = 0;
-                        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+                        // --- 強化標題列偵測 (向上掃描 10 列) ---
+                        let headerIdx = -1;
+                        for (let i = 0; i < Math.min(rows.length, 10); i++) {
                             const rowCells = rows[i].values || [];
                             const rowText = rowCells.map(c => (c.formattedValue || "")).join("");
-                            if (rowText.includes("企業") || rowText.includes("法人代碼") || rowText.includes("代碼")) {
+                            if (rowText.includes("企業") || rowText.includes("法人") || rowText.includes("代碼")) {
                                 headerIdx = i;
                                 break;
                             }
                         }
+                        // 若沒偵測到，預設為第 0 列
+                        if (headerIdx === -1) headerIdx = 0;
 
                         const rawHeaders = rows[headerIdx].values || [];
                         const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
@@ -479,6 +475,7 @@
             }).join('');
         }
 
+        // 純保護不斷行，不干擾顏色
         function wrapNowrapUnits(text) {
             if (!text) return "";
             const parts = text.split(/(<[^>]+>)/g);
@@ -539,7 +536,6 @@
                     } else if (config.isSource) {
                         html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
-                        // 這裡的 valHtml 已包含富文本顏色標籤
                         let valHtml = rowObj.data[i] || "";
                         
                         if (config.isApproval) {

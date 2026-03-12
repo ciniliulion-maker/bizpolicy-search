@@ -193,14 +193,18 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
+        /* 核心修正：查詢按鈕 - 灰框帶陰影，無底色質感設計 */
         .inner-search-btn {
-            background-color: #f1f5f9;
-            color: #475569;
+            background-color: transparent;
+            color: #64748b;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .inner-search-btn:hover {
-            background-color: #e2e8f0;
             color: #0f172a;
+            border-color: #94a3b8;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
             transform: scale(1.05);
         }
         .inner-search-btn:active {
@@ -301,7 +305,9 @@
 
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <!-- 核心修正：字串變更為「欄位顯示：」 -->
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
+                    <!-- 核心修正：按鈕文字變更為「全選」 -->
                     <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
                 </div>
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">

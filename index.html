@@ -58,28 +58,28 @@
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: #f1f5f9 !important; /* 搜尋結果內容淺灰底 */
+            background-color: #f1f5f9 !important; 
         }
 
         .sticky-ent {
             position: sticky !important;
-            left: 60px; /* 序號欄位寬度為 60px */
+            left: 60px; 
             z-index: 30;
-            background-color: #f1f5f9 !important; /* 搜尋結果內容淺灰底 */
+            background-color: #f1f5f9 !important; 
             box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
-            font-weight: 800 !important; /* 企業名稱粗體 */
+            font-weight: 800 !important; 
         }
 
-        /* 欄位名稱（標題列）不顯示淺灰底，維持原本背景色 */
+        /* 欄位名稱維持標題原色 */
         .table-sticky-header th.sticky-sn, 
         .table-sticky-header th.sticky-ent { 
             z-index: 55; 
             background-color: #f8fafc !important; 
         }
 
-        /* 滑動列懸停顏色同步 */
+        /* 核心修正：滑動列懸停顏色改為淡粉紅 (#fff1f2) */
         tr:hover td.sticky-sn, tr:hover td.sticky-ent {
-            background-color: #eff6ff !important;
+            background-color: #fff1f2 !important;
         }
 
         #table-container {
@@ -96,7 +96,7 @@
             font-size: 12pt !important;
         }
 
-        /* 公式與數字保護樣式：強制不斷行 */
+        /* 公式與數字保護樣式 */
         .nowrap-unit {
             white-space: nowrap !important;
             display: inline-block;
@@ -111,12 +111,11 @@
             color: inherit !important;
         }
 
-        /* 企業名稱內容列內的匹配文字維持粗體 */
         .sticky-ent .match-highlight {
             font-weight: 800 !important;
         }
         
-        /* 幣別高亮樣式 */
+        /* 幣別高亮 */
         .currency-bold {
             font-weight: 900 !important;
             color: #0f172a; 
@@ -133,9 +132,9 @@
             font-weight: 800;
         }
 
-        /* 核准出差條件：Y 才標粉紅底 */
-        .approval-y {
-            background-color: #fff1f2 !important; 
+        /* 核心修正：需核准出差「是」顯示紅字 Y，不標粉紅底 */
+        .approval-y-red {
+            color: #e11d48 !important; 
             text-align: center !important;
             font-weight: 800;
         }
@@ -241,17 +240,15 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </span>
-                            <!-- 核心修正：提示詞改為斜體 (placeholder:italic) -->
                             <input type="text" id="searchInput" 
                                 placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
                                 class="w-full pl-12 pr-4 py-4 bg-transparent rounded-xl outline-none placeholder:text-slate-500 placeholder:italic text-slate-800 font-bold"
                                 onkeydown="if(event.key === 'Enter') { event.preventDefault(); performSearch(); }"
                                 oninput="clearSearchError()">
                         </div>
-                        <!-- 空白搜尋錯誤提示文字 -->
                         <div id="searchError" class="text-red-500 text-xs font-bold mt-1.5 ml-2 hidden">請輸入搜尋企業戶關鍵字</div>
                     </div>
-                    <!-- 查詢按鈕：灰框、陰影、無底色質感設計 -->
+                    <!-- 查詢按鈕：質感淺灰色設計 -->
                     <button id="searchBtn" onclick="performSearch()" 
                         class="px-10 bg-transparent text-slate-500 font-bold rounded-xl border-2 border-slate-300 hover:text-slate-700 hover:border-slate-400 hover:bg-slate-50 active:scale-95 transition-all duration-200 shadow-md h-[58px] tracking-[0.2em] flex items-center justify-center">
                         查詢
@@ -275,7 +272,7 @@
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
             
-            <!-- 搜尋筆數顯示：清新淡色風格 -->
+            <!-- 搜尋筆數顯示 -->
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
@@ -309,7 +306,7 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 欄位定義：序號最左，企業名稱次之
+        // 欄位定義
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true, isSticky: true },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },
@@ -465,7 +462,6 @@
                     if (currentRows.length > 0) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                // 核選清單標籤字級改為 10pt
                 span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[10pt]";
                 span.textContent = config.display;
                 label.appendChild(checkbox); label.appendChild(span);
@@ -542,7 +538,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return; 
                 const th = document.createElement('th');
-                // 欄位標題名稱置中對齊 (text-center)
                 th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 
                 if (config.isSN) th.classList.add('sticky-sn');
@@ -558,7 +553,8 @@
             // 2. 建立資料列
             rows.forEach((rowObj, rowIndex) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
+                // 核心修正：滑動列懸停顏色改為淡粉紅 (hover:bg-rose-50)
+                tr.className = "hover:bg-rose-50 transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return; 
                     const td = document.createElement('td');
@@ -579,8 +575,9 @@
 
                         if (config.isApproval) {
                             const textOnly = valHtml.replace(/<[^>]+>/g, "").trim();
+                            // 核心修正：需核准出差為「是」顯示紅字 Y，取消粉紅底
                             if (textOnly === "是" || textOnly === "Y") { 
-                                valHtml = "Y"; td.classList.add('approval-y'); 
+                                valHtml = "Y"; td.classList.add('approval-y-red'); 
                             } else if (textOnly === "否" || textOnly === "N") { 
                                 valHtml = "N"; td.classList.add('text-center'); 
                             } else { 
@@ -642,7 +639,6 @@
         function clearSearchError() {
             const container = document.getElementById('searchContainer');
             const errorMsg = document.getElementById('searchError');
-            // 恢復原本的樣式
             container.classList.remove('border-red-500', 'shadow-none', 'ring-0');
             container.classList.add('border-slate-200');
             errorMsg.classList.add('hidden');
@@ -655,7 +651,6 @@
             const errorMsg = document.getElementById('searchError');
 
             if (!term) {
-                // 顯示防呆紅框：移除預設邊框，改為純紅邊框，並確保無陰影
                 container.classList.remove('border-slate-200');
                 container.classList.add('border-red-500', 'shadow-none', 'ring-0');
                 errorMsg.classList.remove('hidden');

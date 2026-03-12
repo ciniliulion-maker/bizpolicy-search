@@ -41,7 +41,7 @@
         .w-25-char { width: 25em; min-width: 25em; max-width: 25em; white-space: normal !important; }
         .w-30-char { width: 30em; min-width: 30em; max-width: 30em; white-space: normal !important; }
 
-        /* 固定表頭樣式與 10pt 字級，預設靠左對齊 */
+        /* 固定表頭樣式 */
         .table-sticky-header th {
             position: sticky;
             top: 0; 
@@ -51,6 +51,26 @@
             white-space: nowrap;
             font-size: 10pt !important;
             text-align: left !important; 
+        }
+
+        /* 核心修正：固定左側欄位樣式 */
+        .sticky-col {
+            position: sticky !important;
+            left: 0;
+            z-index: 30;
+            background-color: white !important;
+            box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); /* 右側陰影增加層次感 */
+        }
+
+        /* 固定表頭且固定左側時的特殊 z-index */
+        .table-sticky-header th.sticky-col {
+            z-index: 50;
+            background-color: #f8fafc !important;
+        }
+
+        /* 滑動時的背景保持 */
+        tr:hover .sticky-col {
+            background-color: #eff6ff !important; /* 配合 bg-blue-50 */
         }
 
         #table-container {
@@ -267,11 +287,12 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
+        // 核心更新：重新定義欄位順序，並將「企業名稱」設為強制顯示
         const DISPLAY_CONFIG = [
+            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },
             { original: "序號", display: "序號", isSN: true },
             { original: "區域來源", display: "區域", isSource: true }, 
             { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "ID", "CODE"] },
-            { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", searchKeys: ["企業名稱", "公司", "企業同行"] },
             { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務"] },
             { original: "出差是否需經過核准", display: "需核准出差", isApproval: true, searchKeys: ["出差是否需經過核准", "核准"] }, 
@@ -380,7 +401,6 @@
                         const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
                         const mapping = DISPLAY_CONFIG.map(config => {
-                            if (config.isSN || config.isSource) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             let idx = cleanedHeaders.findIndex(h => h === target);
                             if (idx === -1 && config.searchKeys) idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
@@ -399,6 +419,7 @@
                         });
                     });
 
+                    // 預設除 SN/Source/Sticky 欄位外全選
                     columnVisibility = new Array(DISPLAY_CONFIG.length).fill(true);
                     initColumnFilters();
                 }
@@ -410,7 +431,9 @@
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (config.isSN || config.isSource) return;
+                // 核心更新：移除「企業名稱」、「序號」、「區域」的勾選控制
+                if (config.isSticky || config.isSN || config.isSource) return;
+                
                 const label = document.createElement('label');
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
                 const checkbox = document.createElement('input');
@@ -431,9 +454,14 @@
 
         function toggleAllColumns(isVisible) {
             const checkboxes = document.getElementById('column-filters').querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach((cb, idx) => {
+            checkboxes.forEach((cb) => {
                 cb.checked = isVisible;
-                columnVisibility[idx + 2] = isVisible; 
+            });
+            // 更新除了固定欄位外的所有 Visibility
+            DISPLAY_CONFIG.forEach((config, idx) => {
+                if (!config.isSticky && !config.isSN && !config.isSource) {
+                    columnVisibility[idx] = isVisible;
+                }
             });
             if (currentRows.length > 0) renderTable(currentRows);
         }
@@ -464,7 +492,6 @@
             }).join('');
         }
 
-        // 修改：將匹配文字標記為紅色底線，不加粗，且維持原色
         function highlightMatches(text, term) {
             if (!text || !term) return text;
             if (term.trim() === '公司') return text;
@@ -490,12 +517,15 @@
             
             currentRows = rows; 
 
-            // 1. 建立動態表頭：只建立被勾選的 th，後續 th 會自動遞補往前
+            // 1. 建立表頭
             const headerRow = document.createElement('tr');
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (!columnVisibility[index]) return; // 若未核選，則不建立該欄位
+                if (!columnVisibility[index]) return; 
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
+                
+                // 核心更新：套用 Sticky Class
+                if (config.isSticky) th.classList.add('sticky-col');
                 if (config.widthClass) th.classList.add(config.widthClass);
                 if (config.isSN) th.className += " sn-cell";
                 th.textContent = config.display;
@@ -503,15 +533,18 @@
             });
             headerEl.appendChild(headerRow);
 
-            // 2. 建立動態資料列：只建立被勾選的 td
+            // 2. 建立資料列
             rows.forEach((rowObj, rowIndex) => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50 transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
-                    if (!columnVisibility[i]) return; // 若未核選，則不建立該儲存格，後續單元格自動遞補往前
+                    if (!columnVisibility[i]) return; 
                     const td = document.createElement('td');
                     td.className = "px-6 py-5 border-b border-slate-200";
                     
+                    // 核心更新：套用 Sticky Class
+                    if (config.isSticky) td.classList.add('sticky-col');
+
                     let html = "";
                     if (config.isSN) {
                         td.className += " sn-cell opacity-60 font-bold";

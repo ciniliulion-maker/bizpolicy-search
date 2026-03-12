@@ -77,12 +77,9 @@
             background-color: #f8fafc !important; 
         }
 
-        /* 滑動列懸停顏色改為淡粉紅色 (#fffcfd) */
-        .tr-hover-custom:hover {
-            background-color: #fffcfd !important;
-        }
-        .tr-hover-custom:hover td.sticky-sn, 
-        .tr-hover-custom:hover td.sticky-ent {
+        /* 核心修正：搜尋結果懸停底色改為淡粉紅色 (#fffcfd) */
+        /* 註：在 border-separate 模式下，背景必須套用至 td 才能正確顯示 */
+        .tr-hover-custom:hover td {
             background-color: #fffcfd !important;
         }
 
@@ -193,7 +190,7 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
-        /* 核心修正：查詢按鈕 - 灰框帶陰影，無底色質感設計 */
+        /* 查詢按鈕 - 灰框帶陰影，無底色質感設計 */
         .inner-search-btn {
             background-color: transparent;
             color: #64748b;
@@ -305,9 +302,7 @@
 
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                    <!-- 核心修正：字串變更為「欄位顯示：」 -->
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
-                    <!-- 核心修正：按鈕文字變更為「全選」 -->
                     <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
                 </div>
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
@@ -352,7 +347,6 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 欄位定義：移除「區域來源」欄位
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true, isSticky: true },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },

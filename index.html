@@ -53,30 +53,30 @@
             text-align: left !important; 
         }
 
-        /* 核心修正：雙固定欄位樣式 (移除灰底，恢復白色背景) */
+        /* 核心修正：雙固定欄位樣式，資料列設定淺灰底色 (#f1f5f9) */
         .sticky-sn {
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: white !important;
+            background-color: #f1f5f9 !important; /* 搜尋結果欄位標淺灰底 */
         }
 
         .sticky-ent {
             position: sticky !important;
             left: 60px; /* 序號欄位寬度為 60px */
             z-index: 30;
-            background-color: white !important;
+            background-color: #f1f5f9 !important; /* 搜尋結果欄位標淺灰底 */
             box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
         }
 
-        /* 表頭固定背景色恢復 */
+        /* 修正：欄位名稱（表頭）不需要淺灰底，維持原本顏色 */
         .table-sticky-header th.sticky-sn, 
         .table-sticky-header th.sticky-ent { 
             z-index: 55; 
-            background-color: #f8fafc !important;
+            background-color: #f8fafc !important; /* 維持標題原色 */
         }
 
-        /* 滑動列懸停顏色同步 */
+        /* 滑動列懸停顏色同步：當滑過時，灰底變為淡藍高亮 */
         tr:hover td.sticky-sn, tr:hover td.sticky-ent {
             background-color: #eff6ff !important;
         }

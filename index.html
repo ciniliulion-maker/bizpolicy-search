@@ -53,35 +53,32 @@
             text-align: left !important; 
         }
 
-        /* 核心修正：雙固定欄位樣式，改為淺灰底色 (#f1f5f9) */
+        /* 核心修正：雙固定欄位樣式 (移除灰底，恢復白色背景) */
         .sticky-sn {
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: #f1f5f9 !important; /* 淺灰底色區隔 */
+            background-color: white !important;
         }
 
         .sticky-ent {
             position: sticky !important;
             left: 60px; /* 序號欄位寬度為 60px */
             z-index: 30;
-            background-color: #f1f5f9 !important; /* 淺灰底色區隔 */
+            background-color: white !important;
             box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
         }
 
-        /* 表頭固定且位於左側時的背景色調整 */
-        .table-sticky-header th.sticky-sn { 
-            z-index: 55; 
-            background-color: #e2e8f0 !important; /* 表頭灰底稍深 */
-        }
+        /* 表頭固定背景色恢復 */
+        .table-sticky-header th.sticky-sn, 
         .table-sticky-header th.sticky-ent { 
-            z-index: 50; 
-            background-color: #e2e8f0 !important; /* 表頭灰底稍深 */
+            z-index: 55; 
+            background-color: #f8fafc !important;
         }
 
-        /* 滑動列懸停顏色同步：灰底欄位改為深一點的灰色 */
+        /* 滑動列懸停顏色同步 */
         tr:hover td.sticky-sn, tr:hover td.sticky-ent {
-            background-color: #e2e8f0 !important;
+            background-color: #eff6ff !important;
         }
 
         #table-container {
@@ -231,16 +228,21 @@
         <div id="query-view" class="hidden">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4">
                 <div class="flex flex-col md:flex-row items-stretch gap-3">
-                    <div class="flex-1 relative flex items-center">
-                        <span class="absolute left-4 text-slate-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
-                        <input type="text" id="searchInput" 
-                            placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
-                            class="w-full pl-12 pr-4 py-4 bg-slate-100 rounded-xl border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-slate-500 text-slate-800 font-bold"
-                            onkeydown="if(event.key === 'Enter') performSearch()">
+                    <div class="flex-1 flex flex-col">
+                        <div id="searchContainer" class="relative flex items-center bg-slate-100 rounded-xl border border-slate-200 focus-within:bg-white transition-all">
+                            <span class="absolute left-4 text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </span>
+                            <input type="text" id="searchInput" 
+                                placeholder="請輸入關鍵字（代碼、姓名或企業名稱）" 
+                                class="w-full pl-12 pr-4 py-4 bg-transparent rounded-xl outline-none placeholder:text-slate-500 text-slate-800 font-bold"
+                                onkeydown="if(event.key === 'Enter') performSearch()"
+                                oninput="clearSearchError()">
+                        </div>
+                        <!-- 空白搜尋錯誤提示文字 -->
+                        <div id="searchError" class="text-red-500 text-xs font-bold mt-1.5 ml-2 hidden">請輸入搜尋企業戶關鍵字</div>
                     </div>
                     <button id="searchBtn" onclick="performSearch()" 
                         class="px-8 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md h-[58px]">
@@ -624,15 +626,32 @@
         document.getElementById('table-container').onscroll = updateScrollHints;
         window.onresize = updateScrollHints;
 
+        // 清除搜尋錯誤狀態
+        function clearSearchError() {
+            const container = document.getElementById('searchContainer');
+            const errorMsg = document.getElementById('searchError');
+            container.classList.remove('border-l-4', 'border-red-500');
+            errorMsg.classList.add('hidden');
+        }
+
         function performSearch(skipLoading = false) {
-            const term = document.getElementById('searchInput').value.trim();
-            lastSearchTerm = term;
-            if (allMergedData.length === 0) return;
+            const input = document.getElementById('searchInput');
+            const term = input.value.trim();
+            const container = document.getElementById('searchContainer');
+            const errorMsg = document.getElementById('searchError');
+
+            // 核心邏輯：空白驗證
             if (!term) {
+                container.classList.add('border-l-4', 'border-red-500');
+                errorMsg.classList.remove('hidden');
                 document.getElementById('table-container').classList.add('hidden');
                 document.getElementById('result-count').classList.add('hidden');
                 return;
             }
+
+            lastSearchTerm = term;
+            if (allMergedData.length === 0) return;
+            
             const loadingEl = document.getElementById('loading');
             if (!skipLoading) loadingEl.classList.remove('hidden');
 

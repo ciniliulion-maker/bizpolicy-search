@@ -50,22 +50,22 @@
             box-shadow: inset 0 -2px 0 #e2e8f0;
             white-space: nowrap;
             font-size: 10pt !important;
-            text-align: center !important; /* 核心修正：欄位名稱置中 */
+            text-align: center !important; 
         }
 
-        /* 雙固定欄位樣式，資料列設定淺灰底色 (#f1f5f9) */
+        /* 雙固定欄位樣式，資料列背景設為透明/白色以移除灰底 */
         .sticky-sn {
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: #f1f5f9 !important; 
+            background-color: white !important; 
         }
 
         .sticky-ent {
             position: sticky !important;
             left: 60px; /* 序號欄位寬度為 60px */
             z-index: 30;
-            background-color: #f1f5f9 !important; 
+            background-color: white !important; 
             box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
             font-weight: 800 !important; /* 企業名稱欄位標粗體 */
         }
@@ -462,7 +462,8 @@
                     if (currentRows.length > 0) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[12pt]";
+                // 核心修正：核選清單標籤字級改為 10pt
+                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[10pt]";
                 span.textContent = config.display;
                 label.appendChild(checkbox); label.appendChild(span);
                 container.appendChild(label);
@@ -538,7 +539,7 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return; 
                 const th = document.createElement('th');
-                // 核心更新：欄位標題名稱置中對齊 (text-center)
+                // 欄位標題名稱置中對齊 (text-center)
                 th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 
                 if (config.isSN) th.classList.add('sticky-sn');

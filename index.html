@@ -53,7 +53,7 @@
             text-align: center !important; 
         }
 
-        /* 核心修正：雙固定欄位置左，內容列標淺灰底 (#f1f5f9) */
+        /* 雙固定欄位置左，內容列標淺灰底 (#f1f5f9) */
         .sticky-sn {
             position: sticky !important;
             left: 0;
@@ -70,7 +70,7 @@
             font-weight: 800 !important; /* 企業名稱粗體 */
         }
 
-        /* 修正：欄位名稱（標題列）不顯示淺灰底，維持原本背景色 */
+        /* 欄位名稱（標題列）不顯示淺灰底，維持原本背景色 */
         .table-sticky-header th.sticky-sn, 
         .table-sticky-header th.sticky-ent { 
             z-index: 55; 
@@ -251,9 +251,9 @@
                         <!-- 空白搜尋錯誤提示文字 -->
                         <div id="searchError" class="text-red-500 text-xs font-bold mt-1.5 ml-2 hidden">請輸入搜尋企業戶關鍵字</div>
                     </div>
-                    <!-- 查詢按鈕：石墨黑質感 -->
+                    <!-- 查詢按鈕：質感淺灰色設計 -->
                     <button id="searchBtn" onclick="performSearch()" 
-                        class="px-10 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl h-[58px] tracking-[0.2em] flex items-center justify-center">
+                        class="px-10 bg-slate-400 text-white font-bold rounded-xl hover:bg-slate-500 active:translate-y-0.5 active:shadow-inner transition-all duration-200 shadow-[0_4px_0_0_rgba(100,116,139,1)] hover:shadow-[0_2px_0_0_rgba(100,116,139,1)] h-[58px] tracking-[0.2em] flex items-center justify-center border border-slate-300">
                         查詢
                     </button>
                     <button onclick="signOut()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500">登出</button>
@@ -275,7 +275,8 @@
                 <p class="text-slate-400 font-bold">同步雲端數據中...</p>
             </div>
             
-            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-800 rounded-lg text-xs font-bold text-white shadow-sm hidden"></div>
+            <!-- 搜尋筆數顯示：清新淡色風格 -->
+            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
@@ -308,7 +309,6 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 欄位定義：序號最左，企業名稱次之
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true, isSticky: true },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },
@@ -562,7 +562,6 @@
                     const td = document.createElement('td');
                     td.className = "px-6 py-5 border-b border-slate-200";
                     
-                    // 資料內容置左，並根據欄位類型套用 Sticky 或 Gray 底色
                     if (config.isSN) td.classList.add('sticky-sn');
                     if (config.original === "企業同行名稱") td.classList.add('sticky-ent');
 

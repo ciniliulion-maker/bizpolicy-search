@@ -82,14 +82,14 @@
             background-color: #fffcfd !important;
         }
 
-        /* 核心修正：搜尋結果大外框改為更細的橘色 (1.5px) */
+        /* 核心修正：搜尋結果大外框改為 1.5px 藍色 */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1.5px solid #f97316; /* 橘色外框細化為 1.5px */
-            box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.1); 
+            border: 1.5px solid #3b82f6; /* 藍色外框 (Tailwind blue-500) */
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1); 
         }
 
         /* 內容字級 12pt */
@@ -318,7 +318,7 @@
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
-                <!-- 包含橘色外框的容器 -->
+                <!-- 包含藍色外框的容器 -->
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>

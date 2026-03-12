@@ -77,19 +77,19 @@
             background-color: #f8fafc !important; 
         }
 
-        /* 核心修正：搜尋結果懸停底色改為淡粉紅色 (#fffcfd) */
-        /* 註：在 border-separate 模式下，背景必須套用至 td 才能正確顯示 */
+        /* 搜尋結果懸停底色：極淡粉紅色 (#fffcfd) */
         .tr-hover-custom:hover td {
             background-color: #fffcfd !important;
         }
 
+        /* 核心修正：搜尋結果大外框改為橘色 */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f97316; /* 橘色外框 (Tailwind orange-500) */
+            box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.1); /* 帶點微弱的橘色陰影 */
         }
 
         /* 內容字級 12pt */
@@ -190,7 +190,7 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
-        /* 查詢按鈕 - 灰框帶陰影，無底色質感設計 */
+        /* 查詢按鈕 - 灰框帶陰影質感設計 */
         .inner-search-btn {
             background-color: transparent;
             color: #64748b;
@@ -208,7 +208,7 @@
             transform: scale(0.95);
         }
 
-        /* 固定右上角登出按鈕樣式 */
+        /* 右上角固定登出按鈕 */
         .fixed-logout-btn {
             position: fixed;
             top: 1.5rem;
@@ -318,6 +318,7 @@
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
+                <!-- 包含橘色外框的容器 -->
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
@@ -489,7 +490,7 @@
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (config.isSticky) return; // 移除序號與企業名稱的核選，改為固定顯示
+                if (config.isSticky) return; 
                 
                 const label = document.createElement('label');
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
@@ -573,7 +574,6 @@
             
             currentRows = rows; 
 
-            // 1. 建立表頭
             const headerRow = document.createElement('tr');
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return; 
@@ -590,7 +590,6 @@
             });
             headerEl.appendChild(headerRow);
 
-            // 2. 建立資料列
             rows.forEach((rowObj, rowIndex) => {
                 const tr = document.createElement('tr');
                 tr.className = "tr-hover-custom transition-colors duration-200 align-top";

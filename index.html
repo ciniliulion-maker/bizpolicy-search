@@ -77,18 +77,19 @@
             background-color: #f8fafc !important; 
         }
 
-        /* 搜尋結果懸停底色：極淡粉紅色 (#fffcfd) */
+        /* 核心修正：搜尋結果懸停底色改為 #ffe4e1 */
+        /* 註：在 border-separate 模式下，背景必須套用至 td 才能正確顯示 */
         .tr-hover-custom:hover td {
-            background-color: #fffcfd !important;
+            background-color: #ffe4e1 !important;
         }
 
-        /* 核心修正：搜尋結果大外框改為 1.5px 淺灰色 (#c0c0c0) */
+        /* 搜尋結果大外框改為 1.5px 淺灰色 (#c0c0c0) */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1.5px solid #c0c0c0; /* 修改為 #c0c0c0 */
+            border: 1.5px solid #c0c0c0; 
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
         }
 
@@ -318,7 +319,6 @@
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
-                <!-- 包含淺灰色外框的容器 -->
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>

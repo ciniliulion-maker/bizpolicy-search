@@ -77,13 +77,13 @@
             background-color: #f8fafc !important; 
         }
 
-        /* 核心修正：滑動列懸停顏色改為更淡的粉紅色 (#fff9fa) */
+        /* 滑動列懸停顏色改為淡粉紅色 (#fffcfd) */
         .tr-hover-custom:hover {
-            background-color: #fff9fa !important;
+            background-color: #fffcfd !important;
         }
         .tr-hover-custom:hover td.sticky-sn, 
         .tr-hover-custom:hover td.sticky-ent {
-            background-color: #fff9fa !important;
+            background-color: #fffcfd !important;
         }
 
         #table-container {
@@ -141,17 +141,6 @@
             color: #e11d48 !important; 
             text-align: center !important;
             font-weight: 800;
-        }
-
-        .region-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
         }
 
         .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 8px; }
@@ -218,22 +207,25 @@
             transform: scale(0.95);
         }
 
-        /* 固定右上角按鈕樣式 */
+        /* 固定右上角登出按鈕樣式 */
         .fixed-logout-btn {
             position: fixed;
             top: 1.5rem;
             right: 1.5rem;
             z-index: 100;
-            background-color: rgba(255, 255, 255, 0.7);
+            background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(8px);
             border: 1px solid #e2e8f0;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1.25rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 700;
-            color: #94a3b8;
+            color: #64748b;
             transition: all 0.3s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         .fixed-logout-btn:hover {
             color: #ef4444;
@@ -270,8 +262,11 @@
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
-            <!-- 核心修正：登出按鈕移動至固定右上角 -->
+            <!-- 固定右上角登出按鈕 -->
             <button onclick="signOut()" class="fixed-logout-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
                 安全登出系統
             </button>
 
@@ -306,8 +301,8 @@
 
             <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示控制：</h3>
-                    <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">快速全選</button>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
+                    <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
                 </div>
                 <div id="column-filters" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-x-4 gap-y-3">
                     <span class="text-slate-300 text-xs italic">載入中...</span>
@@ -351,10 +346,10 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
+        // 欄位定義：移除「區域來源」欄位
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true, isSticky: true },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },
-            { original: "區域來源", display: "區域", isSource: true }, 
             { original: "法人代碼", display: "法人代碼", searchKeys: ["法人代碼", "代碼", "ID", "CODE"] },
             { original: "主要服務單位", display: "服務單位", searchKeys: ["主要服務單位", "服務單位"] },
             { original: "主要服務業務", display: "業務", widthClass: "w-10-char", searchKeys: ["主要服務業務", "業務"] },
@@ -464,6 +459,7 @@
                         const cleanedHeaders = rawHeaders.map(h => (h.formattedValue || "").toString().replace(/[\s\n\r\t]/g, "").toUpperCase());
                         
                         const mapping = DISPLAY_CONFIG.map(config => {
+                            if (config.isSN) return -1;
                             const target = config.original.replace(/[\s\n\r\t]/g, "").toUpperCase();
                             let idx = cleanedHeaders.findIndex(h => h === target);
                             if (idx === -1 && config.searchKeys) idx = cleanedHeaders.findIndex(h => config.searchKeys.some(key => h.includes(key.toUpperCase())));
@@ -493,7 +489,7 @@
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
             DISPLAY_CONFIG.forEach((config, index) => {
-                if (config.isSticky || config.isSource) return;
+                if (config.isSticky) return; // 移除序號與企業名稱的核選，改為固定顯示
                 
                 const label = document.createElement('label');
                 label.className = "flex items-center cursor-pointer group px-2 py-1 rounded-lg transition-colors hover:bg-slate-100";
@@ -519,7 +515,7 @@
                 cb.checked = isVisible;
             });
             DISPLAY_CONFIG.forEach((config, idx) => {
-                if (!config.isSticky && !config.isSource) {
+                if (!config.isSticky) {
                     columnVisibility[idx] = isVisible;
                 }
             });
@@ -577,6 +573,7 @@
             
             currentRows = rows; 
 
+            // 1. 建立表頭
             const headerRow = document.createElement('tr');
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return; 
@@ -593,9 +590,9 @@
             });
             headerEl.appendChild(headerRow);
 
+            // 2. 建立資料列
             rows.forEach((rowObj, rowIndex) => {
                 const tr = document.createElement('tr');
-                // 核心修正：加入自定義懸停類別 tr-hover-custom
                 tr.className = "tr-hover-custom transition-colors duration-200 align-top";
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return; 
@@ -609,8 +606,6 @@
                     if (config.isSN) {
                         td.className += " sn-cell opacity-60 font-bold";
                         html = rowIndex + 1;
-                    } else if (config.isSource) {
-                        html = `<span class="region-badge">${rowObj.__source}</span>`;
                     } else {
                         let valHtml = rowObj.data[i] || "";
                         const textOnlyContent = valHtml.replace(/<[^>]+>/g, "").trim();

@@ -53,29 +53,35 @@
             text-align: left !important; 
         }
 
-        /* 核心修正：雙固定欄位樣式 */
+        /* 核心修正：雙固定欄位樣式，改為淺灰底色 (#f1f5f9) */
         .sticky-sn {
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: white !important;
+            background-color: #f1f5f9 !important; /* 淺灰底色區隔 */
         }
 
         .sticky-ent {
             position: sticky !important;
             left: 60px; /* 序號欄位寬度為 60px */
             z-index: 30;
-            background-color: white !important;
-            box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); /* 僅在企業名稱右側加陰影 */
+            background-color: #f1f5f9 !important; /* 淺灰底色區隔 */
+            box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
         }
 
-        /* 當表頭也需要固定且位於左側時的 z-index 調整 */
-        .table-sticky-header th.sticky-sn { z-index: 55; background-color: #f8fafc !important; }
-        .table-sticky-header th.sticky-ent { z-index: 50; background-color: #f8fafc !important; }
+        /* 表頭固定且位於左側時的背景色調整 */
+        .table-sticky-header th.sticky-sn { 
+            z-index: 55; 
+            background-color: #e2e8f0 !important; /* 表頭灰底稍深 */
+        }
+        .table-sticky-header th.sticky-ent { 
+            z-index: 50; 
+            background-color: #e2e8f0 !important; /* 表頭灰底稍深 */
+        }
 
-        /* 滑動列懸停顏色同步 */
+        /* 滑動列懸停顏色同步：灰底欄位改為深一點的灰色 */
         tr:hover td.sticky-sn, tr:hover td.sticky-ent {
-            background-color: #eff6ff !important;
+            background-color: #e2e8f0 !important;
         }
 
         #table-container {
@@ -292,7 +298,7 @@
             '行政-合約管理(台中)', '行政-合約管理(台南)', '行政-合約管理(高雄)'
         ];
 
-        // 重新定義欄位順序：序號在最左，企業名稱在右
+        // 欄位定義：序號最左，企業名稱次之
         const DISPLAY_CONFIG = [
             { original: "序號", display: "序號", isSN: true, isSticky: true },
             { original: "企業同行名稱", display: "企業名稱", widthClass: "w-10-char", isSticky: true, searchKeys: ["企業名稱", "公司", "企業同行"] },
@@ -435,7 +441,6 @@
             const container = document.getElementById('column-filters');
             container.innerHTML = '';
             DISPLAY_CONFIG.forEach((config, index) => {
-                // 核心更新：移除「序號」、「企業名稱」、「區域」的核選方塊
                 if (config.isSticky || config.isSource) return;
                 
                 const label = document.createElement('label');
@@ -526,7 +531,6 @@
                 const th = document.createElement('th');
                 th.className = "px-6 py-4 text-left font-black text-slate-500 uppercase tracking-widest border-b border-slate-200";
                 
-                // 核心更新：套用 Sticky Logic
                 if (config.isSN) th.classList.add('sticky-sn');
                 if (config.original === "企業同行名稱") th.classList.add('sticky-ent');
 
@@ -545,7 +549,6 @@
                     const td = document.createElement('td');
                     td.className = "px-6 py-5 border-b border-slate-200";
                     
-                    // 核心更新：套用 Sticky Logic
                     if (config.isSN) td.classList.add('sticky-sn');
                     if (config.original === "企業同行名稱") td.classList.add('sticky-ent');
 

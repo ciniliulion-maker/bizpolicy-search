@@ -156,6 +156,7 @@
             background-color: #FF8000;
             border-color: #FF8000;
         }
+        /* 利用背景圖案確保白色勾勾置中 */
         .custom-checkbox-style:checked::after {
             content: "";
             width: 0.85rem;
@@ -202,7 +203,7 @@
 
         .scroll-hint-btn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
-        /* 核心修正：加大 Google 登入按鈕 */
+        /* 加大 Google 登入按鈕 */
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
@@ -285,11 +286,20 @@
             <p id="sub-title" class="font-medium text-sm italic" style="color: #0066CC;">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
-        <!-- 登入介面：核心修正 - 移除背景與邊框容器 -->
+        <!-- 登入介面 -->
         <div id="login-view" class="flex flex-col items-center justify-center py-20 max-w-lg mx-auto">
-            <div class="mb-8 w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <!-- 核心修正：替換為點狀圓圈鎖頭圖示 -->
+            <div class="mb-8 w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                <svg viewBox="0 0 100 100" class="w-16 h-16">
+                    <!-- 點狀圓圈 (Dotted Circle) -->
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="0.1 8" stroke-linecap="round" />
+                    <!-- 鎖頭主體 -->
+                    <rect x="32" y="48" width="36" height="26" rx="3" fill="currentColor" />
+                    <!-- 鎖頭把手 -->
+                    <path d="M40 48V38a10 10 0 0 1 20 0v10" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round" />
+                    <!-- 匙孔設計 -->
+                    <circle cx="50" cy="58" r="3" fill="white" />
+                    <path d="M50 58 L50 65" stroke="white" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </div>
             <h2 class="text-2xl font-bold text-slate-900 mb-3">權限驗證</h2>

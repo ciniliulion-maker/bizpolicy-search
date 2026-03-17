@@ -49,7 +49,7 @@
             top: 0; 
             z-index: 40;
             background-color: #f8fafc; 
-            box-shadow: inset 0 -2px 0 #BEBEBE; /* 標題底線為 #BEBEBE */
+            box-shadow: inset 0 -2px 0 #BEBEBE; 
             white-space: nowrap;
             font-size: 10pt !important;
             text-align: center !important; 
@@ -83,7 +83,7 @@
             background-color: #fffaf0 !important;
         }
 
-        /* 搜尋結果大外框改為 1.5px 灰色 (#BEBEBE) */
+        /* 搜尋結果大外框 1.5px 灰色 (#BEBEBE) */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
@@ -135,6 +135,38 @@
             font-weight: 800;
         }
 
+        /* 核心修正：自定義核選方塊樣式以確保底色 #FF8000 且勾勾為白色 */
+        .custom-checkbox-style {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.15rem;
+            height: 1.15rem;
+            border: 1px solid #BEBEBE;
+            border-radius: 0.25rem;
+            background-color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .custom-checkbox-style:checked {
+            background-color: #FF8000;
+            border-color: #FF8000;
+        }
+        /* 利用 SVG 繪製白色勾勾 */
+        .custom-checkbox-style:checked::after {
+            content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>');
+            width: 0.75rem;
+            height: 0.75rem;
+            display: block;
+        }
+        .custom-checkbox-style:focus {
+            outline: 2px solid rgba(255, 128, 0, 0.3);
+            outline-offset: 1px;
+        }
+
         .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
@@ -169,7 +201,7 @@
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
-            border: 1px solid #BEBEBE; /* 邊框為 #BEBEBE */
+            border: 1px solid #BEBEBE; 
             padding: 0.75rem 2.5rem;
             border-radius: 9999px; 
             font-family: 'Roboto', 'Inter', sans-serif;
@@ -185,7 +217,6 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
-        /* 查詢按鈕 - 灰框改為 #BEBEBE，底色維持 #E0E0E0 */
         .inner-search-btn {
             background-color: #E0E0E0;
             color: #475569;
@@ -203,7 +234,6 @@
             transform: scale(0.95);
         }
 
-        /* 登出按鈕邊框改為 #BEBEBE */
         .fixed-logout-btn {
             position: fixed;
             top: 1.5rem;
@@ -236,7 +266,6 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢系統</h1>
-            <!-- 文字顏色改為 #0066CC -->
             <p id="sub-title" class="font-medium text-sm italic" style="color: #0066CC;">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
@@ -259,7 +288,6 @@
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
-            <!-- 固定右上角登出按鈕 -->
             <button onclick="signOut()" class="fixed-logout-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -267,10 +295,9 @@
                 安全登出系統
             </button>
 
-            <!-- 核心修正：mb-6 改為 mb-3 進一步縮小間隔 -->
+            <!-- 縮小間隔 mb-3 -->
             <div class="flex flex-col items-center mb-3 w-full">
                 <div class="w-full max-w-4xl relative">
-                    <!-- 膠囊搜尋列邊框為 #BEBEBE -->
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
                         <span class="text-slate-400 mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,8 +324,8 @@
                 </div>
             </div>
 
-            <!-- 欄位顯示區塊邊框為 #BEBEBE -->
-            <div class="bg-white p-5 rounded-2xl border border-[#BEBEBE] mb-6 shadow-sm">
+            <!-- 欄位顯示區塊高度縮小 (px-5 py-3)，外距縮小 (mb-4) -->
+            <div class="bg-white px-5 py-3 rounded-2xl border border-[#BEBEBE] mb-4 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
                     <button id="selectAllBtn" onclick="toggleAllColumns(true)" class="text-blue-600 text-xs font-bold">全選</button>
@@ -313,8 +340,8 @@
                 <p class="text-slate-400 font-bold">正在同步雲端差旅數據...</p>
             </div>
             
-            <!-- 筆數顯示邊框為 #BEBEBE -->
-            <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-[#BEBEBE] rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
+            <!-- 筆數顯示優化：移除框及底色，距離縮小 mb-2 -->
+            <div id="result-count" class="mb-2 inline-flex items-center text-xs font-bold text-slate-500 hidden"></div>
 
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
@@ -325,7 +352,6 @@
                 </div>
             </div>
             
-            <!-- 無結果提示框邊框為 #BEBEBE -->
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-[#BEBEBE] shadow-inner text-slate-400">
                 <h3 class="text-sm font-bold uppercase tracking-widest italic">查對不到任何相符資料</h3>
             </div>
@@ -497,16 +523,15 @@
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
                 
-                // 核心修正：設定勾勾底色為 #FF8000 (accent-color) 並維持聚焦與寬高
-                checkbox.style.accentColor = "#FF8000";
-                checkbox.className = "w-4 h-4 bg-slate-100 border-slate-300 rounded focus:ring-[#FF8000] flex-shrink-0";
+                // 核心修正：套用自定義樣式類別以確保勾勾為白色
+                checkbox.className = "custom-checkbox-style flex-shrink-0 mr-2.5";
                 
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
                     if (currentRows.length > 0) renderTable(currentRows);
                 };
                 const span = document.createElement('span');
-                span.className = "ml-2.5 text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[10pt]";
+                span.className = "text-slate-600 group-hover:text-blue-600 font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[10pt]";
                 span.textContent = config.display;
                 label.appendChild(checkbox); label.appendChild(span);
                 container.appendChild(label);

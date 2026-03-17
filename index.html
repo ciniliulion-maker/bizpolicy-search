@@ -53,19 +53,19 @@
             text-align: center !important; 
         }
 
-        /* 雙固定欄位置左，內容列標淺灰底 (#f1f5f9) */
+        /* 雙固定欄位置左，內容列標背景色改為 #E0E0E0 */
         .sticky-sn {
             position: sticky !important;
             left: 0;
             z-index: 35;
-            background-color: #f1f5f9 !important; 
+            background-color: #E0E0E0 !important; 
         }
 
         .sticky-ent {
             position: sticky !important;
             left: 60px; 
             z-index: 30;
-            background-color: #f1f5f9 !important; 
+            background-color: #E0E0E0 !important; 
             box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1); 
             font-weight: 800 !important; 
         }
@@ -77,20 +77,19 @@
             background-color: #f8fafc !important; 
         }
 
-        /* 核心修正：搜尋結果懸停底色改為 #fffaf0 */
-        /* 註：在 border-separate 模式下，背景必須套用至 td 才能正確顯示 */
+        /* 搜尋結果懸停底色：#fffaf0 */
         .tr-hover-custom:hover td {
             background-color: #fffaf0 !important;
         }
 
-        /* 搜尋結果大外框改為 1.5px 淺灰色 (#c0c0c0) */
+        /* 搜尋結果大外框 1.5px 藍色 */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1.5px solid #c0c0c0; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
+            border: 1.5px solid #3b82f6; 
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1); 
         }
 
         /* 內容字級 12pt */
@@ -191,10 +190,10 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
-        /* 查詢按鈕 - 灰框帶陰影質感設計 */
+        /* 查詢按鈕 - 灰框帶陰影質感設計，底色改為 #E0E0E0 */
         .inner-search-btn {
-            background-color: transparent;
-            color: #64748b;
+            background-color: #E0E0E0;
+            color: #475569;
             border: 1.5px solid #cbd5e1;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -319,6 +318,7 @@
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
+                <!-- 包含藍色外框的容器 -->
                 <div id="table-container" class="custom-scrollbar hidden">
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>

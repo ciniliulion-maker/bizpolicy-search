@@ -11,7 +11,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
-        /* 核心修正：全網頁背景改為 #F0F0F0 */
+        /* 全網頁背景改為 #F0F0F0 */
         body {
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background-color: #F0F0F0 !important;
@@ -49,7 +49,7 @@
             top: 0; 
             z-index: 40;
             background-color: #f8fafc; 
-            box-shadow: inset 0 -2px 0 #BEBEBE; /* 標題底線改為 #BEBEBE */
+            box-shadow: inset 0 -2px 0 #BEBEBE; /* 標題底線為 #BEBEBE */
             white-space: nowrap;
             font-size: 10pt !important;
             text-align: center !important; 
@@ -83,14 +83,14 @@
             background-color: #fffaf0 !important;
         }
 
-        /* 搜尋結果大外框 1.5px 藍色 */
+        /* 核心修正：搜尋結果大外框改為 1.5px 灰色 (#BEBEBE) */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1.5px solid #3b82f6; 
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1); 
+            border: 1.5px solid #BEBEBE; /* 修改為 #BEBEBE */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
         }
 
         .result-font-size {
@@ -169,7 +169,7 @@
         .google-auth-btn {
             background-color: #ffffff;
             color: #3c4043;
-            border: 1px solid #BEBEBE; /* 邊框改為 #BEBEBE */
+            border: 1px solid #BEBEBE; /* 邊框為 #BEBEBE */
             padding: 0.75rem 2.5rem;
             border-radius: 9999px; 
             font-family: 'Roboto', 'Inter', sans-serif;
@@ -185,11 +185,11 @@
         .google-auth-btn:hover { background-color: #f8f9fa; }
         .google-auth-btn img { width: 18px; height: 18px; margin-right: 12px; }
 
-        /* 核心修正：查詢按鈕 - 灰框改為 #BEBEBE，底色維持 #E0E0E0 */
+        /* 查詢按鈕 - 灰框改為 #BEBEBE，底色維持 #E0E0E0 */
         .inner-search-btn {
             background-color: #E0E0E0;
             color: #475569;
-            border: 1.5px solid #BEBEBE; /* 邊框改為 #BEBEBE */
+            border: 1.5px solid #BEBEBE; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -203,7 +203,7 @@
             transform: scale(0.95);
         }
 
-        /* 核心修正：登出按鈕邊框改為 #BEBEBE */
+        /* 登出按鈕邊框改為 #BEBEBE */
         .fixed-logout-btn {
             position: fixed;
             top: 1.5rem;
@@ -211,7 +211,7 @@
             z-index: 100;
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(8px);
-            border: 1px solid #BEBEBE; /* 邊框改為 #BEBEBE */
+            border: 1px solid #BEBEBE; 
             padding: 0.5rem 1.25rem;
             border-radius: 9999px;
             font-size: 0.75rem;
@@ -236,11 +236,11 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢系統</h1>
-            <p id="sub-title" class="text-slate-400 font-medium text-sm italic">差旅台灣六站服務企業戶即時差旅政策</p>
+            <!-- 核心修正：文字顏色改為 #0066CC -->
+            <p id="sub-title" class="font-medium text-sm italic" style="color: #0066CC;">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
         <!-- 登入介面 -->
-        <!-- 核心修正：邊框改為 #BEBEBE -->
         <div id="login-view" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-xl border border-[#BEBEBE] max-w-lg mx-auto">
             <div class="mb-6 w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -269,7 +269,7 @@
 
             <div class="flex flex-col items-center mb-10 w-full">
                 <div class="w-full max-w-4xl relative">
-                    <!-- 核心修正：膠囊搜尋列邊框改為 #BEBEBE -->
+                    <!-- 膠囊搜尋列邊框為 #BEBEBE -->
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
                         <span class="text-slate-400 mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +296,7 @@
                 </div>
             </div>
 
-            <!-- 核心修正：欄位顯示區塊邊框改為 #BEBEBE -->
+            <!-- 欄位顯示區塊邊框為 #BEBEBE -->
             <div class="bg-white p-5 rounded-2xl border border-[#BEBEBE] mb-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
@@ -312,12 +312,11 @@
                 <p class="text-slate-400 font-bold">正在同步雲端差旅數據...</p>
             </div>
             
-            <!-- 核心修正：筆數顯示邊框改為 #BEBEBE -->
+            <!-- 筆數顯示邊框為 #BEBEBE -->
             <div id="result-count" class="mb-4 inline-flex items-center px-4 py-2 bg-slate-100 border border-[#BEBEBE] rounded-lg text-xs font-bold text-slate-600 shadow-sm hidden"></div>
 
             <div class="relative">
                 <div id="table-container" class="custom-scrollbar hidden">
-                    <!-- 核心修正：表格內細線邊框顏色統一 -->
                     <table id="main-table" class="min-w-full border-separate border-spacing-0">
                         <thead id="tableHeader" class="table-sticky-header"></thead>
                         <tbody id="tableBody" class="text-slate-700 font-medium result-font-size"></tbody>
@@ -325,7 +324,7 @@
                 </div>
             </div>
             
-            <!-- 核心修正：無結果提示框邊框改為 #BEBEBE -->
+            <!-- 無結果提示框邊框為 #BEBEBE -->
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 bg-white rounded-2xl border border-[#BEBEBE] shadow-inner text-slate-400">
                 <h3 class="text-sm font-bold uppercase tracking-widest italic">查對不到任何相符資料</h3>
             </div>
@@ -577,7 +576,6 @@
             DISPLAY_CONFIG.forEach((config, index) => {
                 if (!columnVisibility[index]) return; 
                 const th = document.createElement('th');
-                // 核心修正：表格標題邊框顏色改為 #BEBEBE
                 th.className = "px-6 py-4 text-center font-black text-slate-500 uppercase tracking-widest border-b border-[#BEBEBE]";
                 
                 if (config.isSN) th.classList.add('sticky-sn');
@@ -596,7 +594,6 @@
                 DISPLAY_CONFIG.forEach((config, i) => {
                     if (!columnVisibility[i]) return; 
                     const td = document.createElement('td');
-                    // 核心修正：表格資料列邊框顏色改為 #BEBEBE
                     td.className = "px-6 py-5 border-b border-[#BEBEBE]";
                     
                     if (config.isSN) td.classList.add('sticky-sn');
@@ -676,7 +673,6 @@
             const container = document.getElementById('searchContainer');
             const errorMsg = document.getElementById('searchError');
             container.classList.remove('border-red-500');
-            // 核心修正：恢復為 #BEBEBE
             container.classList.add('border-[#BEBEBE]', 'shadow-lg');
             errorMsg.classList.add('hidden');
         }
@@ -688,7 +684,6 @@
             const errorMsg = document.getElementById('searchError');
 
             if (!term) {
-                // 核心修正：邊框邏輯同步
                 container.classList.remove('border-[#BEBEBE]', 'shadow-lg');
                 container.classList.add('border-red-500');
                 errorMsg.classList.remove('hidden');

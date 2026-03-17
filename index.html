@@ -267,8 +267,8 @@
                 安全登出系統
             </button>
 
-            <!-- 核心修正：mb-10 改為 mb-6 縮小間隔 -->
-            <div class="flex flex-col items-center mb-6 w-full">
+            <!-- 核心修正：mb-6 改為 mb-3 進一步縮小間隔 -->
+            <div class="flex flex-col items-center mb-3 w-full">
                 <div class="w-full max-w-4xl relative">
                     <!-- 膠囊搜尋列邊框為 #BEBEBE -->
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
@@ -496,8 +496,11 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
-                // 核心修正：勾選底色改為 #FF8000 (text-[#FF8000]) 與光暈 (focus:ring-[#FF8000])
-                checkbox.className = "w-4 h-4 text-[#FF8000] bg-slate-100 border-slate-300 rounded focus:ring-[#FF8000] flex-shrink-0";
+                
+                // 核心修正：設定勾勾底色為 #FF8000 (accent-color) 並維持聚焦與寬高
+                checkbox.style.accentColor = "#FF8000";
+                checkbox.className = "w-4 h-4 bg-slate-100 border-slate-300 rounded focus:ring-[#FF8000] flex-shrink-0";
+                
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
                     if (currentRows.length > 0) renderTable(currentRows);

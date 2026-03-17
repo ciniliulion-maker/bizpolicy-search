@@ -156,11 +156,11 @@
             background-color: #FF8000;
             border-color: #FF8000;
         }
-        /* 利用 SVG 背景確保置中 */
+        /* 利用 SVG 背景確保白色勾勾置中 */
         .custom-checkbox-style:checked::after {
             content: "";
-            width: 0.8rem;
-            height: 0.8rem;
+            width: 0.85rem;
+            height: 0.85rem;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>');
             background-size: contain;
             background-repeat: no-repeat;
@@ -301,8 +301,8 @@
                 安全登出系統
             </button>
 
-            <!-- 核心修正：增加一倍距離至 mb-12 -->
-            <div class="flex flex-col items-center mb-12 w-full">
+            <!-- 核心修正：間距調整為 75% 高度 (mb-9) -->
+            <div class="flex flex-col items-center mb-9 w-full">
                 <div class="w-full max-w-4xl relative">
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
                         <span class="text-slate-400 mr-4">
@@ -434,7 +434,6 @@
             return `rgb(${r},${g},${b})`;
         }
 
-        // 核心修復：修正 nextStartIndex 計算邏輯
         function cellToHtml(cell) {
             const text = cell.formattedValue || "";
             if (!text) return "";
@@ -530,7 +529,7 @@
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
                 
-                // 套用自定義樣式
+                // 套用自定義類別與勾勾白色置中樣式
                 checkbox.className = "custom-checkbox-style flex-shrink-0 mr-2.5";
                 
                 checkbox.onchange = (e) => {

@@ -135,7 +135,7 @@
             font-weight: 800;
         }
 
-        /* 核選方塊樣式：確保底色 #FF8000 且勾勾為白色並置中 */
+        /* 核選方塊樣式：確保底色 #FF8000 且白色勾勾完美置中 */
         .custom-checkbox-style {
             appearance: none;
             -webkit-appearance: none;
@@ -156,11 +156,11 @@
             background-color: #FF8000;
             border-color: #FF8000;
         }
-        /* 利用背景圖案確保白色勾勾完美置中 */
+        /* 利用 SVG 背景確保置中 */
         .custom-checkbox-style:checked::after {
             content: "";
-            width: 0.85rem;
-            height: 0.85rem;
+            width: 0.8rem;
+            height: 0.8rem;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>');
             background-size: contain;
             background-repeat: no-repeat;
@@ -293,6 +293,7 @@
 
         <!-- 查詢介面 -->
         <div id="query-view" class="hidden">
+            <!-- 固定右上角登出按鈕 -->
             <button onclick="signOut()" class="fixed-logout-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -300,8 +301,8 @@
                 安全登出系統
             </button>
 
-            <!-- 縮小搜尋 Bar 與 欄位顯示的區塊距離 -->
-            <div class="flex flex-col items-center mb-6 w-full">
+            <!-- 核心修正：增加一倍距離至 mb-12 -->
+            <div class="flex flex-col items-center mb-12 w-full">
                 <div class="w-full max-w-4xl relative">
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
                         <span class="text-slate-400 mr-4">
@@ -329,7 +330,7 @@
                 </div>
             </div>
 
-            <!-- 欄位顯示區塊高度與外距縮小 -->
+            <!-- 欄位顯示區塊 -->
             <div class="bg-white px-5 py-3 rounded-2xl border border-[#BEBEBE] mb-4 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">欄位顯示：</h3>
@@ -345,7 +346,7 @@
                 <p class="text-slate-400 font-bold">正在同步雲端差旅數據...</p>
             </div>
             
-            <!-- 筆數顯示優化：無框無底色，距離縮小 -->
+            <!-- 筆數顯示 -->
             <div id="result-count" class="mb-2 inline-flex items-center text-xs font-bold text-slate-500 hidden"></div>
 
             <div class="relative">
@@ -433,6 +434,7 @@
             return `rgb(${r},${g},${b})`;
         }
 
+        // 核心修復：修正 nextStartIndex 計算邏輯
         function cellToHtml(cell) {
             const text = cell.formattedValue || "";
             if (!text) return "";
@@ -445,7 +447,6 @@
             for (let i = 0; i < runs.length; i++) {
                 const run = runs[i];
                 const startIndex = run.startIndex || 0;
-                // 修復括號邏輯錯誤
                 const nextStartIndex = (i + 1 < runs.length) ? runs[i+1].startIndex : text.length;
                 const segment = text.substring(startIndex, nextStartIndex);
                 const color = getCssColor(run.format?.foregroundColor) || baseColor;
@@ -529,7 +530,7 @@
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
                 
-                // 套用自定義樣式並確保置中
+                // 套用自定義樣式
                 checkbox.className = "custom-checkbox-style flex-shrink-0 mr-2.5";
                 
                 checkbox.onchange = (e) => {

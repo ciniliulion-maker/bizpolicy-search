@@ -83,13 +83,13 @@
             background-color: #fffaf0 !important;
         }
 
-        /* 核心修正：搜尋結果大外框改為 1.5px 灰色 (#BEBEBE) */
+        /* 搜尋結果大外框改為 1.5px 灰色 (#BEBEBE) */
         #table-container {
             overflow: auto;
             max-height: 75vh; 
             background-color: white;
             border-radius: 1rem;
-            border: 1.5px solid #BEBEBE; /* 修改為 #BEBEBE */
+            border: 1.5px solid #BEBEBE; 
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
         }
 
@@ -236,7 +236,7 @@
     <div id="app" class="max-w-[98%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
             <h1 class="text-3xl font-black text-slate-900 mb-2">企業差旅政策查詢系統</h1>
-            <!-- 核心修正：文字顏色改為 #0066CC -->
+            <!-- 文字顏色改為 #0066CC -->
             <p id="sub-title" class="font-medium text-sm italic" style="color: #0066CC;">差旅台灣六站服務企業戶即時差旅政策</p>
         </header>
 
@@ -267,7 +267,8 @@
                 安全登出系統
             </button>
 
-            <div class="flex flex-col items-center mb-10 w-full">
+            <!-- 核心修正：mb-10 改為 mb-6 縮小間隔 -->
+            <div class="flex flex-col items-center mb-6 w-full">
                 <div class="w-full max-w-4xl relative">
                     <!-- 膠囊搜尋列邊框為 #BEBEBE -->
                     <div id="searchContainer" class="flex items-center bg-white rounded-full border border-[#BEBEBE] shadow-lg px-6 py-2 transition-all duration-300 ring-0 shadow-none">
@@ -495,7 +496,8 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = true;
-                checkbox.className = "w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 flex-shrink-0";
+                // 核心修正：勾選底色改為 #FF8000 (text-[#FF8000]) 與光暈 (focus:ring-[#FF8000])
+                checkbox.className = "w-4 h-4 text-[#FF8000] bg-slate-100 border-slate-300 rounded focus:ring-[#FF8000] flex-shrink-0";
                 checkbox.onchange = (e) => {
                     columnVisibility[index] = e.target.checked;
                     if (currentRows.length > 0) renderTable(currentRows);
